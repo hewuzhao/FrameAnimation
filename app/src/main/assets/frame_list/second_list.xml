@@ -175,4 +175,12 @@
         name="sky038"
         duration="100" />
 
+    <frame
+        from="drawable"
+        name="sky039"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky040"
+        duration="100" />
 </frame-list>

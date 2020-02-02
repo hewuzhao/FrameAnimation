@@ -11,9 +11,7 @@ import android.view.View;
 import com.hewuzhao.frameanimation.frameview.FrameImage;
 import com.hewuzhao.frameanimation.frameview.FrameImageParser;
 import com.hewuzhao.frameanimation.frameview.FrameTextureView;
-import com.hewuzhao.frameanimation.utils.ResourceUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import pub.devrel.easypermissions.EasyPermissions;
@@ -67,13 +65,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             Log.e(TAG, "BlobCacheIntentService, ex: " + e);
         }
         if (frameImageList != null && frameImageList.size() > 0) {
-            List<String> list = new ArrayList<>();
-            List<Integer> di = new ArrayList<>();
-            for (FrameImage fi : frameImageList) {
-                list.add(fi.getName());
-                di.add(ResourceUtil.getDrawableId(this, fi.getName()));
-            }
-
             mFrameView.setFrameImageList(frameImageList);
             mFrameView.setDuration(60);
             mFrameView.setRepeatTimes(FrameTextureView.INFINITE);
@@ -91,13 +82,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             Log.e(TAG, "BlobCacheIntentService, ex: " + e);
         }
         if (frameImageList2 != null && frameImageList2.size() > 0) {
-            List<String> list = new ArrayList<>();
-            List<Integer> di = new ArrayList<>();
-            for (FrameImage fi : frameImageList2) {
-                list.add(fi.getName());
-                di.add(ResourceUtil.getDrawableId(this, fi.getName()));
-            }
-
             mFrameView2.setFrameImageList(frameImageList2);
             mFrameView2.setDuration(50);
             mFrameView2.setRepeatTimes(FrameTextureView.INFINITE);
