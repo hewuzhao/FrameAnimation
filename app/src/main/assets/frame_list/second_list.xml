@@ -1,0 +1,178 @@
+<frame-list>
+
+    <frame
+        from="drawable"
+        name="sky000"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky001"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky002"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky003"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky004"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky005"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky006"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky007"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky008"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky009"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky010"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky011"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky012"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky013"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky014"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky015"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky016"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky017"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="sky018"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky019"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky020"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky021"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky022"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky023"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky024"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky025"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky026"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky027"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky028"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky029"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky030"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky031"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky032"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky033"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky034"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky035"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky036"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky037"
+        duration="100" />
+    <frame
+        from="drawable"
+        name="sky038"
+        duration="100" />
+
+</frame-list>

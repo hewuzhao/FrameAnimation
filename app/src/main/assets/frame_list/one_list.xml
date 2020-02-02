@@ -1,0 +1,103 @@
+<frame-list>
+
+    <frame
+        from="drawable"
+        name="frame0"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame1"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame2"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame3"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame4"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame5"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame6"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame7"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame8"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame9"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame10"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame11"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame12"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame13"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame14"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame15"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame16"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame17"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame18"
+        duration="100" />
+
+    <frame
+        from="drawable"
+        name="frame19"
+        duration="100" />
+
+</frame-list>
