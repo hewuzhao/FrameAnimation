@@ -1,0 +1,2 @@
+# FrameAnimation
+使用TextureView和BlobCache高性能播放帧动画，避免在很多帧的情况下使用AnimationDrawable带来的OOM和卡顿问题。
