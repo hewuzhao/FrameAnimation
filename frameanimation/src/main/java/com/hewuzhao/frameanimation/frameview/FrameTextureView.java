@@ -36,6 +36,9 @@ public class FrameTextureView extends BaseTextureView {
     private int mRepeatTimes;
     private int mRepeatedCount;
 
+    /**
+     * 是否彻底被销毁
+     */
     private final AtomicBoolean mIsDestroy = new AtomicBoolean(false);
 
     /**
@@ -55,12 +58,14 @@ public class FrameTextureView extends BaseTextureView {
      * decoded bitmaps stores in this queue
      * consumer is drawing thread, producer is decoding thread.
      */
-    private LinkedBlockingQueue mDecodedBitmaps = new LinkedBlockingQueue(mBufferSize);
+    private LinkedBlockingQueue mDecodedBitmapQueue = new LinkedBlockingQueue(mBufferSize);
+
     /**
      * bitmaps already drawn by canvas stores in this queue
      * consumer is decoding thread, producer is drawing thread.
      */
-    private LinkedBlockingQueue mDrawnBitmaps = new LinkedBlockingQueue(mBufferSize);
+    private LinkedBlockingQueue mDrawnBitmapQueue = new LinkedBlockingQueue(mBufferSize);
+
     /**
      * the thread for decoding bitmaps
      */
@@ -105,6 +110,7 @@ public class FrameTextureView extends BaseTextureView {
         super.init();
         mDecodeOptions = new BitmapFactory.Options();
         mDecodeOptions.inMutable = true;
+        Log.d(TAG, "init FrameTextureView.");
         mDecodeHandlerThread = new HandlerThread(DECODE_THREAD_NAME);
     }
 
@@ -190,20 +196,25 @@ public class FrameTextureView extends BaseTextureView {
      * recycle the bitmap used by frame animation.
      * Usually it should be invoked when the ui of frame animation is no longer visible
      */
+    @Override
     public void destroy() {
-        Log.i(TAG, "destroy frame textureview.");
+        Log.i(TAG, "destroy FrameTextureView.");
         mIsDestroy.set(true);
+        super.destroy();
 
-        if (mDrawnBitmaps != null) {
-            mDrawnBitmaps.clear();
-        }
-        if (mDecodedBitmaps != null) {
-            mDecodedBitmaps.clear();
-        }
+        destroyDrawnBitmapQueue();
+        destroyDecodedBitmapQueue();
+
         if (mDecodeHandler != null) {
             mDecodeHandler.removeCallbacksAndMessages(null);
             mDecodeHandler = null;
         }
+
+        if (mDecodeRunnable != null) {
+            mDecodeRunnable.destroy();
+            mDecodeRunnable = null;
+        }
+
         if (mDecodeHandlerThread != null) {
             mDecodeHandlerThread.quit();
             mDecodeHandlerThread = null;
@@ -211,6 +222,28 @@ public class FrameTextureView extends BaseTextureView {
 
         if (mFrameImageList != null) {
             mFrameImageList.clear();
+        }
+    }
+
+    private void destroyDecodedBitmapQueue() {
+        try {
+            if (mDecodedBitmapQueue != null) {
+                mDecodedBitmapQueue.destroy();
+                mDecodedBitmapQueue = null;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void destroyDrawnBitmapQueue() {
+        try {
+            if (mDrawnBitmapQueue != null) {
+                mDrawnBitmapQueue.destroy();
+                mDrawnBitmapQueue = null;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -343,9 +376,6 @@ public class FrameTextureView extends BaseTextureView {
      * * @param canvas
      */
     private void clearCanvas(Canvas canvas) {
-//        mDrawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-//        canvas.drawPaint(mDrawPaint);
-//        mDrawPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
     }
 
@@ -357,6 +387,9 @@ public class FrameTextureView extends BaseTextureView {
      * @return
      */
     private Bitmap decodeBitmap(FrameImage frameImage, BitmapFactory.Options options) {
+        if (mIsDestroy.get()) {
+            return null;
+        }
         options.inScaled = false;
         Bitmap bitmap = null;
         if (BlobCacheManager.getInstance().isImageBlobCacheInited()) {
@@ -387,20 +420,27 @@ public class FrameTextureView extends BaseTextureView {
     }
 
     private void putDecodedBitmap(FrameImage frameImage, BitmapFactory.Options options, LinkedBitmap linkedBitmap) {
+        if (mIsDestroy.get()) {
+            return;
+        }
         Bitmap bitmap = decodeBitmap(frameImage, options);
         if (bitmap == null) {
             return;
         }
         linkedBitmap.bitmap = bitmap;
         try {
-            mDecodedBitmaps.put(linkedBitmap);
-        } catch (InterruptedException e) {
+            mDecodedBitmapQueue.put(linkedBitmap);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private void putDrawnBitmap(LinkedBitmap bitmap) {
-        mDrawnBitmaps.offer(bitmap);
+        try {
+            mDrawnBitmapQueue.offer(bitmap);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     /**
@@ -409,10 +449,13 @@ public class FrameTextureView extends BaseTextureView {
      * @return
      */
     private LinkedBitmap getDrawnBitmap() {
+        if (mIsDestroy.get()) {
+            return null;
+        }
         LinkedBitmap bitmap = null;
         try {
-            bitmap = mDrawnBitmaps.take();
-        } catch (InterruptedException e) {
+            bitmap = mDrawnBitmapQueue.take();
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return bitmap;
@@ -427,8 +470,8 @@ public class FrameTextureView extends BaseTextureView {
     private LinkedBitmap getDecodedBitmap() {
         LinkedBitmap bitmap = null;
         try {
-            bitmap = mDecodedBitmaps.take();
-        } catch (InterruptedException e) {
+            bitmap = mDecodedBitmapQueue.take();
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return bitmap;
@@ -448,6 +491,13 @@ public class FrameTextureView extends BaseTextureView {
 
         public void setIndex(int index) {
             this.index = index;
+        }
+
+        public void destroy() {
+            if (frameImageList != null) {
+                frameImageList.clear();
+            }
+            options = null;
         }
 
         @Override

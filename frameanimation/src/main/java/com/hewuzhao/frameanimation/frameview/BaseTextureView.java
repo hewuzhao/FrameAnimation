@@ -5,24 +5,26 @@ import android.graphics.Canvas;
 import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Looper;
-import android.os.Message;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.TextureView;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by hewuzhao
  * on 2020-02-01
  */
 public abstract class BaseTextureView extends TextureView implements TextureView.SurfaceTextureListener {
+    private static final String TAG = "BaseTextureView";
 
     private static final String DRAW_THREAD_NAME = "DRAW_HANDLER_THREAD";
 
     private HandlerThread mDrawHandlerThread;
-    private TextureViewHandler mDrawHandler;
+    private Handler mDrawHandler;
     protected int mFrameDuration = 80;
     private Canvas mCanvas;
-    private boolean mIsAlive;
+    private final AtomicBoolean mIsAlive = new AtomicBoolean(false);
 
 
     public BaseTextureView(Context context) {
@@ -45,6 +47,10 @@ public abstract class BaseTextureView extends TextureView implements TextureView
         init();
     }
 
+    protected void init() {
+        setSurfaceTextureListener(this);
+    }
+
     @Override
     public boolean isOpaque() {
         return false;
@@ -52,7 +58,8 @@ public abstract class BaseTextureView extends TextureView implements TextureView
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        mIsAlive = true;
+        Log.d(TAG, "surface created.");
+        mIsAlive.set(true);
         startDrawThread();
     }
 
@@ -63,9 +70,10 @@ public abstract class BaseTextureView extends TextureView implements TextureView
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        mIsAlive = false;
+        mIsAlive.set(false);
         surface.release();
         stopDrawThread();
+        Log.d(TAG, "surface destroy.");
 
         return false;
     }
@@ -73,6 +81,18 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
 
+    }
+
+    protected void destroy() {
+        if (mDrawHandler != null) {
+            mDrawHandler.removeCallbacksAndMessages(null);
+            mDrawHandler = null;
+        }
+
+        if (mDrawHandlerThread != null) {
+            mDrawHandlerThread.quit();
+            mDrawHandlerThread = null;
+        }
     }
 
     protected int getFrameDuration() {
@@ -83,25 +103,14 @@ public abstract class BaseTextureView extends TextureView implements TextureView
         mFrameDuration = frameDuration;
     }
 
-    protected void init() {
-        setSurfaceTextureListener(this);
-    }
-
     private void stopDrawThread() {
-        if (mDrawHandler != null) {
-            mDrawHandler.removeCallbacksAndMessages(null);
-            mDrawHandler = null;
-        }
-        if (mDrawHandlerThread != null) {
-            mDrawHandlerThread.quit();
-            mDrawHandlerThread = null;
-        }
+        destroy();
     }
 
     private void startDrawThread() {
         mDrawHandlerThread = new HandlerThread(DRAW_THREAD_NAME);
         mDrawHandlerThread.start();
-        mDrawHandler = new TextureViewHandler(mDrawHandlerThread.getLooper());
+        mDrawHandler = new Handler(mDrawHandlerThread.getLooper());
         mDrawHandler.post(new DrawRunnable());
     }
 
@@ -133,24 +142,11 @@ public abstract class BaseTextureView extends TextureView implements TextureView
      */
     protected abstract int getDefaultHeight();
 
-
-    private class TextureViewHandler extends Handler {
-
-        public TextureViewHandler(Looper looper) {
-            super(looper);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-        }
-    }
-
     private class DrawRunnable implements Runnable {
 
         @Override
         public void run() {
-            if (!mIsAlive) {
+            if (!mIsAlive.get()) {
                 return;
             }
             try {
@@ -158,6 +154,7 @@ public abstract class BaseTextureView extends TextureView implements TextureView
                 onFrameDraw(mCanvas);
             } catch (Exception e) {
                 e.printStackTrace();
+                Log.e(TAG, "DrawRunnable, ex: " + e);
             } finally {
                 try {
                     unlockCanvasAndPost(mCanvas);

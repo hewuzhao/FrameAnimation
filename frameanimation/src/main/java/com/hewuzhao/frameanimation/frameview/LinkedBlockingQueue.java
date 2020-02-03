@@ -225,7 +225,7 @@ public class LinkedBlockingQueue {
     /**
      * recycle the bitmaps one by one
      */
-    public void clear() {
+    public void destroy() {
         destroy.set(true);
         fullyLock();
         try {
