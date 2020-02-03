@@ -202,9 +202,6 @@ public class FrameTextureView extends BaseTextureView {
         mIsDestroy.set(true);
         super.destroy();
 
-        destroyDrawnBitmapQueue();
-        destroyDecodedBitmapQueue();
-
         if (mDecodeHandler != null) {
             mDecodeHandler.removeCallbacksAndMessages(null);
             mDecodeHandler = null;
@@ -219,6 +216,9 @@ public class FrameTextureView extends BaseTextureView {
             mDecodeHandlerThread.quit();
             mDecodeHandlerThread = null;
         }
+
+        destroyDrawnBitmapQueue();
+        destroyDecodedBitmapQueue();
 
         if (mFrameImageList != null) {
             mFrameImageList.clear();
@@ -429,7 +429,9 @@ public class FrameTextureView extends BaseTextureView {
         }
         linkedBitmap.bitmap = bitmap;
         try {
-            mDecodedBitmapQueue.put(linkedBitmap);
+            if (mDecodedBitmapQueue != null) {
+                mDecodedBitmapQueue.put(linkedBitmap);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -437,7 +439,9 @@ public class FrameTextureView extends BaseTextureView {
 
     private void putDrawnBitmap(LinkedBitmap bitmap) {
         try {
-            mDrawnBitmapQueue.offer(bitmap);
+            if (mDrawnBitmapQueue != null) {
+                mDrawnBitmapQueue.offer(bitmap);
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -454,7 +458,9 @@ public class FrameTextureView extends BaseTextureView {
         }
         LinkedBitmap bitmap = null;
         try {
-            bitmap = mDrawnBitmapQueue.take();
+            if (mDrawnBitmapQueue != null) {
+                bitmap = mDrawnBitmapQueue.take();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -470,7 +476,9 @@ public class FrameTextureView extends BaseTextureView {
     private LinkedBitmap getDecodedBitmap() {
         LinkedBitmap bitmap = null;
         try {
-            bitmap = mDecodedBitmapQueue.take();
+            if (mDecodedBitmapQueue != null) {
+                bitmap = mDecodedBitmapQueue.take();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

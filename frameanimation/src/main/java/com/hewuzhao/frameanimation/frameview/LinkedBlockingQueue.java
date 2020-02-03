@@ -57,6 +57,9 @@ public class LinkedBlockingQueue {
     }
 
     public void put(LinkedBitmap bitmap) throws InterruptedException {
+        if (destroy.get()) {
+            return;
+        }
         if (bitmap == null) {
             throw new NullPointerException();
         }
@@ -92,6 +95,9 @@ public class LinkedBlockingQueue {
     }
 
     public boolean offer(LinkedBitmap bitmap) {
+        if (destroy.get()) {
+            return false;
+        }
         if (bitmap == null) {
             throw new NullPointerException();
         }
