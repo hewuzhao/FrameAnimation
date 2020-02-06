@@ -46,7 +46,7 @@ public class BlobCacheService extends IntentService {
             String[] files = getBaseContext().getAssets().list(NAME_FRAME_LIST_FOLDER);
             if (files != null && files.length > 0) {
                 for (String file : files) {
-                    List<FrameImage> tmp = new FrameImageParser().parse(getBaseContext().getAssets().open(NAME_FRAME_LIST_FOLDER + File.separator + file));
+                    List<FrameImage> tmp = new FrameImageParser().parse(NAME_FRAME_LIST_FOLDER + File.separator + file);
                     if (tmp != null && tmp.size() > 0) {
                         frameImageList.addAll(tmp);
                     }

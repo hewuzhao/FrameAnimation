@@ -4,6 +4,9 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.Xml;
 
+import com.hewuzhao.frameanimation.FrameApplication;
+import com.hewuzhao.frameanimation.utils.CommonUtil;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -25,6 +28,32 @@ public class FrameImageParser {
     private static final String ATTRIBUTE_FROM = "from";
     private static final String ATTRIBUTE_NAME = "name";
     private static final String ATTRIBUTE_DURATION = "duration";
+
+
+    /**
+     * 解析配置XML文件
+     *
+     * @param assetsFilePath assets中的文件path
+     * @return 帧列表信息
+     */
+    public List<FrameImage> parse(String assetsFilePath) {
+        List<FrameImage> result = new ArrayList<>();
+        if (TextUtils.isEmpty(assetsFilePath)) {
+            return result;
+        }
+
+        InputStream in = null;
+        try {
+            in = FrameApplication.sApplication.getAssets().open(assetsFilePath);
+            result = parse(in);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            CommonUtil.closeSafely(in);
+        }
+
+        return result;
+    }
 
     /**
      * 解析配置XML文件

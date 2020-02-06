@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         List<FrameImage> frameImageList = null;
 
         try {
-            frameImageList = new FrameImageParser().parse(getBaseContext().getAssets().open("frame_list/one_list.xml"));
+            frameImageList = new FrameImageParser().parse("frame_list/one_list.xml");
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG, "BlobCacheIntentService, ex: " + e);
@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         List<FrameImage> frameImageList2 = null;
 
         try {
-            frameImageList2 = new FrameImageParser().parse(getBaseContext().getAssets().open("frame_list/second_list.xml"));
+            frameImageList2 = new FrameImageParser().parse("frame_list/second_list.xml");
         } catch (Exception e) {
             e.printStackTrace();
             Log.e(TAG, "BlobCacheIntentService, ex: " + e);
