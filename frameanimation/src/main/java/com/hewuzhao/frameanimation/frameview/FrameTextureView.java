@@ -19,7 +19,7 @@ import com.hewuzhao.frameanimation.utils.ResourceUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by hewuzhao
@@ -37,11 +37,6 @@ public class FrameTextureView extends BaseTextureView {
     private int mRepeatedCount;
 
     /**
-     * 是否彻底被销毁
-     */
-    private final AtomicBoolean mIsDestroy = new AtomicBoolean(false);
-
-    /**
      * the resources of frame animation
      */
     private List<FrameImage> mFrameImageList = new ArrayList<>();
@@ -49,11 +44,13 @@ public class FrameTextureView extends BaseTextureView {
     /**
      * the index of bitmap resource which is decoding
      */
-    private int mBitmapIdIndex;
+    private final AtomicInteger mBitmapIdIndex = new AtomicInteger();
+
     /**
      * the index of frame which is drawing
      */
-    private int mFrameIndex = INVALID_INDEX;
+    private final AtomicInteger mFrameIndex = new AtomicInteger(INVALID_INDEX);
+
     /**
      * decoded bitmaps stores in this queue
      * consumer is drawing thread, producer is decoding thread.
@@ -150,26 +147,25 @@ public class FrameTextureView extends BaseTextureView {
         if (list == null || list.size() == 0) {
             return;
         }
+        resetData();
+        init();
         mFrameImageList = new ArrayList<>(list);
         //by default, take the first bitmap's dimension into consideration
         getBitmapDimension();
         preloadFrames();
-        mDecodeRunnable = new DecodeRunnable(mBitmapIdIndex, mFrameImageList, mDecodeOptions);
+        mDecodeRunnable = new DecodeRunnable(mBitmapIdIndex.get(), mFrameImageList, mDecodeOptions);
     }
 
     private void getBitmapDimension() {
         int[] wh = null;
-        if (BlobCacheManager.getInstance().isImageBlobCacheInited()
-                && mFrameImageList != null
-                && mBitmapIdIndex >= 0
-                && mBitmapIdIndex < mFrameImageList.size()) {
-            wh = BlobCacheUtil.getCacheBitmapWidthAndHeight(mFrameImageList.get(mBitmapIdIndex).getName());
+        if (BlobCacheManager.getInstance().isImageBlobCacheInited()) {
+            wh = BlobCacheUtil.getCacheBitmapWidthAndHeight(mFrameImageList.get(0).getName());
         }
 
         if (wh == null) {
             final BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = true;
-            ResourceUtil.getBitmap(mFrameImageList.get(mBitmapIdIndex), options);
+            ResourceUtil.getBitmap(mFrameImageList.get(0), options);
             mDefaultWidth = options.outWidth;
             mDefaultHeight = options.outHeight;
         } else {
@@ -186,10 +182,21 @@ public class FrameTextureView extends BaseTextureView {
      * load the first several frames of animation before it is started
      */
     private void preloadFrames() {
-        int index = mBitmapIdIndex++;
-        putDecodedBitmap(mFrameImageList.get(index), mDecodeOptions, new LinkedBitmap());
-        index = mBitmapIdIndex++;
-        putDecodedBitmap(mFrameImageList.get(index), mDecodeOptions, new LinkedBitmap());
+        if (!mDecodeHandlerThread.isAlive()) {
+            mDecodeHandlerThread.start();
+        }
+        if (mDecodeHandler == null) {
+            mDecodeHandler = new Handler(mDecodeHandlerThread.getLooper());
+        }
+        mDecodeHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                int index = mBitmapIdIndex.getAndIncrement();
+                putDecodedBitmap(mFrameImageList.get(index), mDecodeOptions, new LinkedBitmap());
+                index = mBitmapIdIndex.getAndIncrement();
+                putDecodedBitmap(mFrameImageList.get(index), mDecodeOptions, new LinkedBitmap());
+            }
+        });
     }
 
     /**
@@ -199,7 +206,6 @@ public class FrameTextureView extends BaseTextureView {
     @Override
     public void destroy() {
         Log.i(TAG, "destroy FrameTextureView.");
-        mIsDestroy.set(true);
         super.destroy();
 
         if (mDecodeHandler != null) {
@@ -248,8 +254,53 @@ public class FrameTextureView extends BaseTextureView {
     }
 
     @Override
+    protected void resetData() {
+        Log.e(TAG, "resetData().");
+        super.resetData();
+        reset();
+        if (mDecodeHandler != null) {
+            mDecodeHandler.removeCallbacksAndMessages(null);
+            mDecodeHandler = null;
+        }
+
+        if (mDecodeRunnable != null) {
+            mDecodeRunnable.destroy();
+            mDecodeRunnable = null;
+        }
+
+        if (mDecodeHandlerThread != null) {
+            mDecodeHandlerThread.quit();
+            mDecodeHandlerThread = null;
+        }
+
+        try {
+            if (mDrawnBitmapQueue != null) {
+                mDrawnBitmapQueue.resetData();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Log.e(TAG, "drawn bitmap queue reset data, ex: " + ex);
+        }
+
+        try {
+            if (mDecodedBitmapQueue != null) {
+                mDecodedBitmapQueue.resetData();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Log.e(TAG, "decoded bitmap queue reset data, ex: " + ex);
+        }
+
+        if (mFrameImageList != null) {
+            mFrameImageList.clear();
+        }
+        if (mDecodeOptions != null) {
+            mDecodeOptions = null;
+        }
+    }
+
+    @Override
     protected void onFrameDraw(Canvas canvas) {
-        clearCanvas(canvas);
         if (!isStarted()) {
             return;
         }
@@ -272,7 +323,7 @@ public class FrameTextureView extends BaseTextureView {
         if (mIsDestroy.get()) {
             return;
         }
-        mFrameIndex = 0;
+        mFrameIndex.set(0);
         if (mDecodeHandlerThread == null) {
             mDecodeHandlerThread = new HandlerThread(DECODE_THREAD_NAME);
         }
@@ -284,7 +335,7 @@ public class FrameTextureView extends BaseTextureView {
         }
 
         if (mDecodeRunnable == null) {
-            mDecodeRunnable = new DecodeRunnable(mBitmapIdIndex, mFrameImageList, mDecodeOptions);
+            mDecodeRunnable = new DecodeRunnable(mBitmapIdIndex.get(), mFrameImageList, mDecodeOptions);
         }
 
         mDecodeRunnable.setIndex(0);
@@ -300,11 +351,12 @@ public class FrameTextureView extends BaseTextureView {
      */
     private void drawOneFrame(Canvas canvas) {
         LinkedBitmap linkedBitmap = getDecodedBitmap();
-        if (linkedBitmap != null) {
+        if (linkedBitmap != null && linkedBitmap.bitmap != null) {
+            clearCanvas(canvas);
             canvas.drawBitmap(linkedBitmap.bitmap, mSrcRect, mDstRect, mDrawPaint);
             putDrawnBitmap(linkedBitmap);
         }
-        mFrameIndex++;
+        mFrameIndex.incrementAndGet();
     }
 
     /**
@@ -318,7 +370,8 @@ public class FrameTextureView extends BaseTextureView {
      * reset the index of frame, preparing for the next frame animation
      */
     private void reset() {
-        mFrameIndex = INVALID_INDEX;
+        mFrameIndex.set(INVALID_INDEX);
+        mBitmapIdIndex.set(0);
     }
 
     /**
@@ -327,7 +380,7 @@ public class FrameTextureView extends BaseTextureView {
      * @return true: animation is finished, false: animation is doing
      */
     private boolean isFinish() {
-        return mFrameIndex >= mFrameImageList.size() - 1;
+        return mFrameIndex.get() >= mFrameImageList.size() - 1;
     }
 
     /**
@@ -336,13 +389,15 @@ public class FrameTextureView extends BaseTextureView {
      * @return true: animation is started, false: animation is not started
      */
     private boolean isStarted() {
-        return mFrameIndex != INVALID_INDEX;
+        return mFrameIndex.get() != INVALID_INDEX;
     }
 
     /**
      * start frame animation from the first frame
      */
+    @Override
     public void start() {
+        super.start();
         boolean isStarted = isStarted();
         Log.i(TAG, "start frame textureview, is started: " + isStarted);
         if (isStarted) {
@@ -351,7 +406,7 @@ public class FrameTextureView extends BaseTextureView {
         if (mIsDestroy.get()) {
             return;
         }
-        mFrameIndex = 0;
+        mFrameIndex.set(0);
         if (mDecodeHandlerThread == null) {
             mDecodeHandlerThread = new HandlerThread(DECODE_THREAD_NAME);
         }
@@ -363,13 +418,18 @@ public class FrameTextureView extends BaseTextureView {
         }
 
         if (mDecodeRunnable == null) {
-            mDecodeRunnable = new DecodeRunnable(mBitmapIdIndex, mFrameImageList, mDecodeOptions);
+            mDecodeRunnable = new DecodeRunnable(mBitmapIdIndex.get(), mFrameImageList, mDecodeOptions);
         }
 
         mDecodeRunnable.setIndex(0);
         mDecodeHandler.post(mDecodeRunnable);
     }
 
+    @Override
+    public void stop() {
+        super.stop();
+
+    }
 
     /**
      * clear out the drawing on canvas,preparing for the next frame
@@ -487,18 +547,18 @@ public class FrameTextureView extends BaseTextureView {
 
     private class DecodeRunnable implements Runnable {
 
-        private int index;
+        private AtomicInteger index = new AtomicInteger();
         private List<FrameImage> frameImageList;
         private BitmapFactory.Options options;
 
         public DecodeRunnable(int index, List<FrameImage> frameImageList, BitmapFactory.Options options) {
-            this.index = index;
+            this.index.set(index);
             this.frameImageList = frameImageList;
             this.options = options;
         }
 
         public void setIndex(int index) {
-            this.index = index;
+            this.index.set(index);
         }
 
         public void destroy() {
@@ -510,17 +570,21 @@ public class FrameTextureView extends BaseTextureView {
 
         @Override
         public void run() {
+            Log.e(TAG, "decode runnable, isStop: " + mIsStop.get());
             if (mIsDestroy.get()) {
                 return;
             }
-            putDecodedBitmapByReuse(frameImageList.get(index), options);
-            index++;
-            if (index < frameImageList.size()) {
+            if (mIsStop.get()) {
+                return;
+            }
+
+            putDecodedBitmapByReuse(frameImageList.get(index.getAndIncrement()), options);
+            if (index.get() < frameImageList.size()) {
                 if (mDecodeHandler != null) {
                     mDecodeHandler.post(this);
                 }
             } else {
-                index = 0;
+                index.set(0);
             }
         }
     }

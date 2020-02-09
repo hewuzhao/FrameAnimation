@@ -47,6 +47,7 @@ public class LinkedBlockingQueue {
     private LinkedBitmap tail;
 
     private final AtomicBoolean destroy = new AtomicBoolean(false);
+    private final AtomicBoolean isStop = new AtomicBoolean(false);
 
 
     public LinkedBlockingQueue(int capacity) {
@@ -57,7 +58,7 @@ public class LinkedBlockingQueue {
     }
 
     public void put(LinkedBitmap bitmap) throws InterruptedException {
-        if (destroy.get()) {
+        if (destroy.get() || isStop.get()) {
             return;
         }
         if (bitmap == null) {
@@ -78,7 +79,7 @@ public class LinkedBlockingQueue {
              * signalled if it ever changes from capacity. Similarly
              * for all other uses of count in other wait guards.
              */
-            while (count.get() == capacity && !destroy.get()) {
+            while (count.get() == capacity && !destroy.get() && !isStop.get()) {
                 notFull.await();
             }
             enqueue(bitmap);
@@ -95,7 +96,7 @@ public class LinkedBlockingQueue {
     }
 
     public boolean offer(LinkedBitmap bitmap) {
-        if (destroy.get()) {
+        if (destroy.get() || isStop.get()) {
             return false;
         }
         if (bitmap == null) {
@@ -132,7 +133,7 @@ public class LinkedBlockingQueue {
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lockInterruptibly();
         try {
-            while (count.get() == 0 && !destroy.get()) {
+            while (count.get() == 0 && !destroy.get() && !isStop.get()) {
                 notEmpty.await();
             }
             x = dequeue();
@@ -233,6 +234,16 @@ public class LinkedBlockingQueue {
      */
     public void destroy() {
         destroy.set(true);
+        clear();
+    }
+
+    public void resetData() {
+        isStop.set(true);
+        clear();
+        isStop.set(false);
+    }
+
+    private void clear() {
         fullyLock();
         try {
             signalAll();
@@ -243,8 +254,8 @@ public class LinkedBlockingQueue {
             while (p != null) {
                 if (p.bitmap != null) {
                     p.bitmap.recycle();
+                    p.bitmap = null;
                 }
-                p.bitmap = null;
                 p = p.next;
             }
 
@@ -252,10 +263,11 @@ public class LinkedBlockingQueue {
             while (p != null) {
                 if (p.bitmap != null) {
                     p.bitmap.recycle();
+                    p.bitmap = null;
                 }
-                p.bitmap = null;
                 p = p.next;
             }
+            count.set(0);
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {

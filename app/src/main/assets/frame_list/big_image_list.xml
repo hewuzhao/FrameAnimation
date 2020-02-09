@@ -1,0 +1,103 @@
+<frame-list>
+
+    <frame
+        from="mipmap"
+        name="big_00"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_01"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_02"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_03"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_04"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_05"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_06"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_07"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_08"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_09"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_10"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_11"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_12"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_13"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_14"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_15"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_16"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_17"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_18"
+        duration="100" />
+
+    <frame
+        from="mipmap"
+        name="big_19"
+        duration="100" />
+
+</frame-list>

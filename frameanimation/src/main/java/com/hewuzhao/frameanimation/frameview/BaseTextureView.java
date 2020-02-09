@@ -25,6 +25,8 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     protected int mFrameDuration = 80;
     private Canvas mCanvas;
     private final AtomicBoolean mIsAlive = new AtomicBoolean(false);
+    protected final AtomicBoolean mIsStop = new AtomicBoolean(false);
+    protected final AtomicBoolean mIsDestroy = new AtomicBoolean(false);
 
 
     public BaseTextureView(Context context) {
@@ -60,7 +62,6 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         Log.d(TAG, "surface created.");
         mIsAlive.set(true);
-        startDrawThread();
     }
 
     @Override
@@ -83,7 +84,31 @@ public abstract class BaseTextureView extends TextureView implements TextureView
 
     }
 
+    protected void stop() {
+        Log.e(TAG, "stop.");
+        mIsStop.set(true);
+    }
+
+    protected void start() {
+        Log.e(TAG, "start.");
+        mIsStop.set(false);
+        startDrawThread();
+    }
+
+    protected void resetData() {
+        if (mDrawHandler != null) {
+            mDrawHandler.removeCallbacksAndMessages(null);
+            mDrawHandler = null;
+        }
+
+        if (mDrawHandlerThread != null) {
+            mDrawHandlerThread.quit();
+            mDrawHandlerThread = null;
+        }
+    }
+
     protected void destroy() {
+        mIsDestroy.set(true);
         if (mDrawHandler != null) {
             mDrawHandler.removeCallbacksAndMessages(null);
             mDrawHandler = null;
@@ -108,9 +133,16 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     }
 
     private void startDrawThread() {
-        mDrawHandlerThread = new HandlerThread(DRAW_THREAD_NAME);
-        mDrawHandlerThread.start();
-        mDrawHandler = new Handler(mDrawHandlerThread.getLooper());
+        if (mDrawHandlerThread == null) {
+            mDrawHandlerThread = new HandlerThread(DRAW_THREAD_NAME);
+        }
+        if (!mDrawHandlerThread.isAlive()) {
+            mDrawHandlerThread.start();
+        }
+
+        if (mDrawHandler == null) {
+            mDrawHandler = new Handler(mDrawHandlerThread.getLooper());
+        }
         mDrawHandler.post(new DrawRunnable());
     }
 
@@ -146,7 +178,14 @@ public abstract class BaseTextureView extends TextureView implements TextureView
 
         @Override
         public void run() {
+            Log.e(TAG, "draw runnable, isStop: " + mIsStop.get());
             if (!mIsAlive.get()) {
+                return;
+            }
+            if (mIsDestroy.get()) {
+                return;
+            }
+            if (mIsStop.get()) {
                 return;
             }
             try {

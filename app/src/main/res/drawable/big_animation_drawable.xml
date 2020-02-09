@@ -1,0 +1,65 @@
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android"
+    android:oneshot="false">
+
+    <item
+        android:drawable="@drawable/big_00"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_01"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_02"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_03"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_04"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_05"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_06"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_07"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_08"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_09"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_10"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_11"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_12"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_13"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_14"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_15"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_16"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_17"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_18"
+        android:duration="60" />
+    <item
+        android:drawable="@drawable/big_19"
+        android:duration="60" />
+
+</animation-list>
