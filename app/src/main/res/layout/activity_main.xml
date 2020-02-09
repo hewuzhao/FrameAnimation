@@ -6,72 +6,109 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/small_frame_texture_view"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="20dp"
-        android:text="逐帧动画 小图（&lt;1M）"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/frame_view_part"
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/darker_gray"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:id="@+id/interval_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <androidx.appcompat.widget.AppCompatSeekBar
+            android:id="@+id/frame_interval"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:layout_marginEnd="20dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <androidx.appcompat.widget.AppCompatSpinner
+            android:id="@+id/scale_type"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="20dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/frame_interval" />
+
+        <androidx.appcompat.widget.AppCompatSpinner
+            android:id="@+id/repeat_mode"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="20dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/scale_type" />
+
+        <Button
+            android:id="@+id/small_frame_texture_view"
+            android:layout_width="200dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="20dp"
+            android:text="逐帧动画 小图（&lt;1M）"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/repeat_mode" />
+
+        <Button
+            android:id="@+id/big_frame_texture_view"
+            android:layout_width="200dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="20dp"
+            android:text="逐帧动画 大图（&gt;=1M）"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/small_frame_texture_view" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <Button
         android:id="@+id/small_animation_drawable"
-        android:layout_width="0dp"
+        android:layout_width="200dp"
         android:layout_height="50dp"
-        android:layout_marginStart="20dp"
         android:layout_marginTop="10dp"
         android:layout_marginEnd="20dp"
         android:text="原生帧动画 小图（&lt;1M）"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/small_frame_texture_view" />
-
-    <Button
-        android:id="@+id/big_frame_texture_view"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="20dp"
-        android:text="逐帧动画 大图（&gt;=1M）"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/small_animation_drawable" />
+        app:layout_constraintTop_toBottomOf="@id/frame_view_part" />
 
     <Button
         android:id="@+id/big_animation_drawable"
-        android:layout_width="0dp"
+        android:layout_width="200dp"
         android:layout_height="50dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="5dp"
         android:layout_marginEnd="20dp"
         android:text="原生帧动画 大图（&gt;=1M）"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/big_frame_texture_view" />
+        app:layout_constraintTop_toBottomOf="@id/small_animation_drawable" />
 
     <com.hewuzhao.frameanimation.frameview.FrameTextureView
         android:id="@+id/frame_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/frame_view_part"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/big_animation_drawable" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/animation_image_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/frame_view_part"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/big_animation_drawable" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

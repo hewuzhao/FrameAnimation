@@ -2,6 +2,8 @@ package com.hewuzhao.frameanimation;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatSeekBar;
+import androidx.appcompat.widget.AppCompatSpinner;
 
 import android.Manifest;
 import android.graphics.drawable.AnimationDrawable;
@@ -9,13 +11,19 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
+import com.hewuzhao.frameanimation.frameview.BaseTextureView;
 import com.hewuzhao.frameanimation.frameview.FrameImage;
 import com.hewuzhao.frameanimation.frameview.FrameImageParser;
 import com.hewuzhao.frameanimation.frameview.FrameTextureView;
 
+import java.util.Arrays;
 import java.util.List;
 
 import pub.devrel.easypermissions.EasyPermissions;
@@ -23,15 +31,35 @@ import pub.devrel.easypermissions.EasyPermissions;
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
     private static final String TAG = "MainActivity";
 
+    private final List<String> REPEAT_MODE = Arrays.asList(
+            "INFINITE",
+            "ONCE",
+            "TWICE"
+    );
+
+    private final List<String> SCALE_TYPE = Arrays.asList(
+            "CENTER",
+            "CENTER_INSIDE",
+            "CENTER_CROP",
+            "FIT_END",
+            "FIT_CENTER",
+            "FIT_START",
+            "FIT_XY"
+    );
+
     private FrameTextureView mFrameView;
     private ImageView mAnimationImageView;
     private Button mSmallFrameBt;
     private Button mSmallAnimationBt;
     private Button mBigFrameBt;
     private Button mBigAnimationBt;
-    private boolean mIsInited = false;
-
     private Button mCurrentSelectedBt;
+    private AppCompatSpinner mScaleType;
+    private AppCompatSpinner mRepeatMode;
+    private AppCompatSeekBar mFrameInterval;
+    private TextView mIntervalView;
+
+    private boolean mIsInited = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +128,121 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             }
         });
 
+        mIntervalView = findViewById(R.id.interval_view);
+
+        mScaleType = findViewById(R.id.scale_type);
+        mScaleType.setAdapter(new ArrayAdapter(this, R.layout.spinner_item_view, SCALE_TYPE));
+        mScaleType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (parent == null || view == null) {
+                    return;
+                }
+                if (view instanceof TextView) {
+                    String text = ((TextView) view).getText().toString();
+                    int scaleType;
+                    switch (text) {
+                        case "CENTER": {
+                            scaleType = BaseTextureView.ScaleType.CENTER;
+                            break;
+                        }
+                        case "CENTER_INSIDE": {
+                            scaleType = BaseTextureView.ScaleType.CENTER_INSIDE;
+                            break;
+                        }
+                        case "CENTER_CROP": {
+                            scaleType = BaseTextureView.ScaleType.CENTER_CROP;
+                            break;
+                        }
+                        case "FIT_END": {
+                            scaleType = BaseTextureView.ScaleType.FIT_END;
+                            break;
+                        }
+                        case "FIT_CENTER": {
+                            scaleType = BaseTextureView.ScaleType.FIT_CENTER;
+                            break;
+                        }
+                        case "FIT_START": {
+                            scaleType = BaseTextureView.ScaleType.FIT_START;
+                            break;
+                        }
+                        default: {
+                            scaleType = BaseTextureView.ScaleType.FIT_XY;
+                        }
+                    }
+                    mFrameView.setScaleType(scaleType);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        mRepeatMode = findViewById(R.id.repeat_mode);
+        mRepeatMode.setAdapter(new ArrayAdapter(this, R.layout.spinner_item_view, REPEAT_MODE));
+        mRepeatMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (parent == null || view == null) {
+                    return;
+                }
+                if (view instanceof TextView) {
+                    String text = ((TextView) view).getText().toString();
+                    int repeatMode;
+                    switch (text) {
+                        case "ONCE": {
+                            repeatMode = BaseTextureView.RepeatMode.ONCE;
+                            break;
+                        }
+                        case "TWICE": {
+                            repeatMode = BaseTextureView.RepeatMode.TWICE;
+                            break;
+                        }
+                        case "INFINITE":
+                        default: {
+                            repeatMode = BaseTextureView.RepeatMode.INFINITE;
+                        }
+                    }
+                    mFrameView.setRepeatMode(repeatMode);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        mFrameInterval = findViewById(R.id.frame_interval);
+        mFrameInterval.setMax(300);
+        mFrameInterval.setProgress(80);
+        mIntervalView.setText("80ms");
+        mFrameInterval.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (progress <= 0) {
+                    progress = 1;
+                }
+
+                mIntervalView.setText(progress + "ms");
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                int progress = seekBar.getProgress();
+                if (progress <= 0) {
+                    progress = 1;
+                }
+                mFrameView.setFrameInterval(progress);
+            }
+        });
+
         checkPermissions();
     }
 
@@ -133,8 +276,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
         if (frameImageList != null && frameImageList.size() > 0) {
             mFrameView.setFrameImageList(frameImageList);
-            mFrameView.setDuration(60);
-            mFrameView.setRepeatTimes(FrameTextureView.INFINITE);
+            mFrameView.setFrameInterval(60);
+            mFrameView.setRepeatMode(BaseTextureView.RepeatMode.INFINITE);
             mFrameView.start();
 
         }
@@ -151,8 +294,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         }
         if (frameImageList != null && frameImageList.size() > 0) {
             mFrameView.setFrameImageList(frameImageList);
-            mFrameView.setDuration(60);
-            mFrameView.setRepeatTimes(FrameTextureView.INFINITE);
+            mFrameView.setFrameInterval(60);
+            mFrameView.setRepeatMode(BaseTextureView.RepeatMode.INFINITE);
             mFrameView.start();
 
         }

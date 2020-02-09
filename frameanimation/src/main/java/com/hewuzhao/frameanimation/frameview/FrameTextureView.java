@@ -5,9 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.PorterDuff;
-import android.graphics.Rect;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.AttributeSet;
@@ -31,10 +29,6 @@ public class FrameTextureView extends BaseTextureView {
     public static final int INVALID_INDEX = Integer.MAX_VALUE;
     private int mBufferSize = 3;
     public static final String DECODE_THREAD_NAME = "DECODE_HANDLER_THREAD";
-    public static final int INFINITE = -1;
-
-    private int mRepeatTimes;
-    private int mRepeatedCount;
 
     /**
      * the resources of frame animation
@@ -76,11 +70,6 @@ public class FrameTextureView extends BaseTextureView {
      */
     private Handler mDecodeHandler;
     private BitmapFactory.Options mDecodeOptions;
-    private Paint mDrawPaint = new Paint();
-    private Rect mSrcRect;
-    private Rect mDstRect = new Rect();
-    private int mDefaultWidth;
-    private int mDefaultHeight;
 
     public FrameTextureView(Context context) {
         super(context);
@@ -98,10 +87,6 @@ public class FrameTextureView extends BaseTextureView {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
-    public void setRepeatTimes(int repeatTimes) {
-        mRepeatTimes = repeatTimes;
-    }
-
     @Override
     protected void init() {
         super.init();
@@ -112,32 +97,7 @@ public class FrameTextureView extends BaseTextureView {
     }
 
     @Override
-    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
-        mDstRect.set(0, 0, getWidth(), getHeight());
-    }
-
-    @Override
-    protected int getDefaultWidth() {
-        return mDefaultWidth;
-    }
-
-    @Override
-    protected int getDefaultHeight() {
-        return mDefaultHeight;
-    }
-
-    @Override
     protected void onFrameDrawFinish() {
-    }
-
-    /**
-     * set the duration of frame animation
-     *
-     * @param duration time in milliseconds
-     */
-    public void setDuration(int duration) {
-        setFrameDuration(duration);
     }
 
     /**
@@ -151,31 +111,8 @@ public class FrameTextureView extends BaseTextureView {
         init();
         mFrameImageList = new ArrayList<>(list);
         //by default, take the first bitmap's dimension into consideration
-        getBitmapDimension();
         preloadFrames();
         mDecodeRunnable = new DecodeRunnable(mBitmapIdIndex.get(), mFrameImageList, mDecodeOptions);
-    }
-
-    private void getBitmapDimension() {
-        int[] wh = null;
-        if (BlobCacheManager.getInstance().isImageBlobCacheInited()) {
-            wh = BlobCacheUtil.getCacheBitmapWidthAndHeight(mFrameImageList.get(0).getName());
-        }
-
-        if (wh == null) {
-            final BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inJustDecodeBounds = true;
-            ResourceUtil.getBitmap(mFrameImageList.get(0), options);
-            mDefaultWidth = options.outWidth;
-            mDefaultHeight = options.outHeight;
-        } else {
-            mDefaultWidth = wh[0];
-            mDefaultHeight = wh[1];
-        }
-
-        mSrcRect = new Rect(0, 0, mDefaultWidth, mDefaultHeight);
-        //we have to re-measure to make mDefaultWidth in use in onMeasure()
-        requestLayout();
     }
 
     /**
@@ -301,12 +238,9 @@ public class FrameTextureView extends BaseTextureView {
 
     @Override
     protected void onFrameDraw(Canvas canvas) {
-        if (!isStarted()) {
-            return;
-        }
         if (isFinish()) {
             onFrameAnimationEnd();
-            if (mRepeatTimes == INFINITE) {
+            if (mRepeatMode == RepeatMode.INFINITE) {
                 repeatDrawOneFrame(canvas);
             } else if (mRepeatedCount < mRepeatTimes) {
                 repeatDrawOneFrame(canvas);
@@ -354,12 +288,15 @@ public class FrameTextureView extends BaseTextureView {
      * @param canvas
      */
     private void drawOneFrame(Canvas canvas) {
+        Log.e(TAG, "draw on frame start.");
         LinkedBitmap linkedBitmap = getDecodedBitmap();
         if (linkedBitmap != null && linkedBitmap.bitmap != null) {
             clearCanvas(canvas);
-            canvas.drawBitmap(linkedBitmap.bitmap, mSrcRect, mDstRect, mDrawPaint);
+            configureDrawMatrix(linkedBitmap.bitmap);
+            canvas.drawBitmap(linkedBitmap.bitmap, mDrawMatrix, null);
             putDrawnBitmap(linkedBitmap);
         }
+        Log.e(TAG, "draw on frame end.");
         mFrameIndex.incrementAndGet();
     }
 

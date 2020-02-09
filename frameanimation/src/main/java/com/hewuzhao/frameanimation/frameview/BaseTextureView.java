@@ -1,7 +1,10 @@
 package com.hewuzhao.frameanimation.frameview;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -9,6 +12,10 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.TextureView;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -21,14 +28,28 @@ public abstract class BaseTextureView extends TextureView implements TextureView
 
     private static final String DRAW_THREAD_NAME = "DRAW_HANDLER_THREAD";
 
-    private HandlerThread mDrawHandlerThread;
-    private Handler mDrawHandler;
-    protected int mFrameDuration = 80;
-    private Canvas mCanvas;
+    private final List<Matrix.ScaleToFit> MATRIX_SCALE_ARRAY = Arrays.asList(
+            Matrix.ScaleToFit.FILL, Matrix.ScaleToFit.START, Matrix.ScaleToFit.CENTER, Matrix.ScaleToFit.END
+    );
     private final AtomicBoolean mIsAlive = new AtomicBoolean(false);
-
     protected final AtomicInteger mStatus = new AtomicInteger(FrameViewStatus.IDLE);
+    private final AtomicInteger mFrameInterval = new AtomicInteger(80);
+    @ScaleType
+    private int mScaleType = ScaleType.CENTER;
+    private HandlerThread mDrawHandlerThread;
+    private int mLastScaleType = -1;
+    private Handler mDrawHandler;
+    protected Matrix mDrawMatrix;
+    private int mLastSrcHeight;
+    private int mLastDstHeight;
+    private int mLastSrcWidth;
+    private int mLastDstWidth;
+    private Canvas mCanvas;
 
+    @RepeatMode
+    protected int mRepeatMode = RepeatMode.INFINITE;
+    protected int mRepeatTimes;
+    protected int mRepeatedCount;
 
     public BaseTextureView(Context context) {
         super(context);
@@ -51,6 +72,7 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     }
 
     protected void init() {
+        mDrawMatrix = new Matrix();
         setSurfaceTextureListener(this);
     }
 
@@ -97,6 +119,11 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     }
 
     protected void resetData() {
+        mLastScaleType = -1;
+        mLastSrcHeight = 0;
+        mLastDstHeight = 0;
+        mLastSrcWidth = 0;
+        mLastDstWidth = 0;
         if (mDrawHandler != null) {
             mDrawHandler.removeCallbacksAndMessages(null);
             mDrawHandler = null;
@@ -121,12 +148,21 @@ public abstract class BaseTextureView extends TextureView implements TextureView
         }
     }
 
-    protected int getFrameDuration() {
-        return mFrameDuration;
+    public void setScaleType(@ScaleType int scaleType) {
+        mScaleType = scaleType;
     }
 
-    protected void setFrameDuration(int frameDuration) {
-        mFrameDuration = frameDuration;
+    public void setFrameInterval(int interval) {
+        mFrameInterval.set(interval);
+    }
+
+    public void setRepeatMode(@RepeatMode int repeatMode) {
+        mRepeatMode = repeatMode;
+        if (mRepeatMode == RepeatMode.ONCE) {
+            mRepeatTimes = 1;
+        } else if (mRepeatMode == RepeatMode.TWICE) {
+            mRepeatTimes = 2;
+        }
     }
 
     private void stopDrawThread() {
@@ -147,39 +183,11 @@ public abstract class BaseTextureView extends TextureView implements TextureView
         mDrawHandler.post(new DrawRunnable());
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        int originWidth = getMeasuredWidth();
-        int originHeight = getMeasuredHeight();
-        int width = widthMode == MeasureSpec.AT_MOST ? getDefaultWidth() : originWidth;
-        int height = heightMode == MeasureSpec.AT_MOST ? getDefaultHeight() : originHeight;
-        setMeasuredDimension(width, height);
-    }
-
-    /**
-     * the width is used when wrap_content is set to layout_width
-     * the child knows how big it should be
-     *
-     * @return
-     */
-    protected abstract int getDefaultWidth();
-
-    /**
-     * the height is used when wrap_content is set to layout_height
-     * the child knows how big it should be
-     *
-     * @return
-     */
-    protected abstract int getDefaultHeight();
-
     private class DrawRunnable implements Runnable {
 
         @Override
         public void run() {
-            Log.e(TAG, "draw runnable, status: " + mStatus.get());
+            Log.e(TAG, "draw runnable, status: " + mStatus.get() + ", isAlive: " + mIsAlive.get());
             if (!mIsAlive.get()) {
                 return;
             }
@@ -206,9 +214,141 @@ public abstract class BaseTextureView extends TextureView implements TextureView
 
             // TODO: 2019-05-08 stop the drawing thread
             if (mDrawHandler != null) {
-                mDrawHandler.postDelayed(this, mFrameDuration);
+                mDrawHandler.postDelayed(this, mFrameInterval.get());
             }
         }
+    }
+
+    /**
+     * 根据ScaleType配置绘制bitmap的Matrix
+     *
+     * @param bitmap
+     */
+    protected void configureDrawMatrix(Bitmap bitmap) {
+        int srcWidth = bitmap.getWidth();
+        int dstWidth = getWidth();
+        int srcHeight = bitmap.getHeight();
+        int dstHeight = getHeight();
+        boolean nothingChanged = ((mLastScaleType == mScaleType)
+                && (mLastSrcWidth == srcWidth)
+                && (mLastDstWidth == dstWidth)
+                && (mLastSrcHeight == srcHeight)
+                && (mLastDstHeight == dstHeight));
+        if (nothingChanged) {
+            return;
+        }
+        mLastSrcWidth = srcWidth;
+        mLastDstWidth = dstWidth;
+        mLastSrcHeight = srcHeight;
+        mLastDstHeight = dstHeight;
+        mLastScaleType = mScaleType;
+        switch (mScaleType) {
+            case ScaleType.MATRIX: {
+                return;
+            }
+            case ScaleType.CENTER: {
+                mDrawMatrix.setTranslate(Math.round((dstWidth - srcWidth) * 0.5f), Math.round((dstHeight - srcHeight) * 0.5f));
+                break;
+            }
+            case ScaleType.CENTER_CROP: {
+                float scale;
+                float dx = 0f;
+                float dy = 0f;
+                //按照高缩放
+                if (dstHeight * srcWidth > dstWidth * srcHeight) {
+                    scale = dstHeight / srcHeight;
+                    dx = (dstWidth - srcWidth * scale) * 0.5f;
+                } else {
+                    scale = dstWidth / srcWidth;
+                    dy = (dstHeight - srcHeight * scale) * 0.5f;
+                }
+                mDrawMatrix.setScale(scale, scale);
+                mDrawMatrix.postTranslate(dx, dy);
+                break;
+            }
+            case ScaleType.CENTER_INSIDE: {
+                float scale;
+                //小于dst时不缩放
+                if (srcWidth <= dstWidth && srcHeight <= dstHeight) {
+                    scale = 1.0f;
+                } else {
+                    scale = Math.min(dstWidth / srcWidth, dstHeight / srcHeight);
+                }
+                float dx = Math.round((dstWidth - srcWidth * scale) * 0.5f);
+                float dy = Math.round((dstHeight - srcHeight * scale) * 0.5f);
+                mDrawMatrix.setScale(scale, scale);
+                mDrawMatrix.postTranslate(dx, dy);
+                break;
+            }
+            default: {
+                RectF srcRect = new RectF(0f, 0f, bitmap.getWidth(), bitmap.getHeight());
+                RectF dstRect = new RectF(0f, 0f, getWidth(), getHeight());
+                mDrawMatrix.setRectToRect(srcRect, dstRect, MATRIX_SCALE_ARRAY.get(mScaleType - 1));
+            }
+        }
+    }
+
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface RepeatMode {
+        /**
+         * play once
+         */
+        int ONCE = 1;
+
+        /**
+         * play twice
+         */
+        int TWICE = 2;
+
+        /**
+         * play infinity
+         */
+        int INFINITE = 3;
+    }
+
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ScaleType {
+        /**
+         * scale using the bitmap matrix when drawing.
+         */
+        int MATRIX = 0;
+
+        /**
+         * @see Matrix.ScaleToFit.FILL
+         */
+        int FIT_XY = 1;
+
+        /**
+         * @see Matrix.ScaleToFit.START
+         */
+        int FIT_START = 2;
+
+        /**
+         * @see Matrix.ScaleToFit.CENTER
+         */
+        int FIT_CENTER = 3;
+
+        /**
+         * @see Matrix.ScaleToFit.END
+         */
+        int FIT_END = 4;
+
+        /**
+         * Center the image in the view, but perform no scaling.
+         */
+        int CENTER = 5;
+
+        /**
+         * Scale the image uniformly (maintain the image's aspect ratio) so that both dimensions (width and height) of the image
+         * will be equal to or larger than the corresponding dimension of the view.
+         */
+        int CENTER_CROP = 6;
+
+        /**
+         * Scale the image uniformly (maintain the image's aspect ratio) so that both dimensions (width and height) of the image
+         * will be equal to or less than the corresponding dimension of the view.
+         */
+        int CENTER_INSIDE = 7;
     }
 
     /**
