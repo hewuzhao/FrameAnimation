@@ -25,8 +25,13 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     private FrameTextureView mFrameView;
     private ImageView mAnimationImageView;
+    private Button mSmallFrameBt;
+    private Button mSmallAnimationBt;
+    private Button mBigFrameBt;
+    private Button mBigAnimationBt;
     private boolean mIsInited = false;
-    private int mCurrentIndex = -1;
+
+    private Button mCurrentSelectedBt;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,17 +39,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         setContentView(R.layout.activity_main);
         mFrameView = findViewById(R.id.frame_view);
         mAnimationImageView = findViewById(R.id.animation_image_view);
-        Button smallFrameBt = findViewById(R.id.small_frame_texture_view);
-        smallFrameBt.setOnClickListener(new View.OnClickListener() {
+        mSmallFrameBt = findViewById(R.id.small_frame_texture_view);
+        mSmallFrameBt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!mIsInited) {
                     return;
                 }
-                if (mCurrentIndex == 1) {
-                    return;
-                }
-                mCurrentIndex = 1;
+                updateCurrentSelectedBt(mSmallFrameBt);
 
                 stopAnimationView();
                 mAnimationImageView.setVisibility(View.GONE);
@@ -52,17 +54,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 showSmallFrameView();
             }
         });
-        Button smallAnimationBt = findViewById(R.id.small_animation_drawable);
-        smallAnimationBt.setOnClickListener(new View.OnClickListener() {
+        mSmallAnimationBt = findViewById(R.id.small_animation_drawable);
+        mSmallAnimationBt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!mIsInited) {
                     return;
                 }
-                if (mCurrentIndex == 2) {
-                    return;
-                }
-                mCurrentIndex = 2;
+                updateCurrentSelectedBt(mSmallAnimationBt);
 
                 stopFrameViw();
                 mAnimationImageView.setVisibility(View.VISIBLE);
@@ -70,17 +69,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 showSmallAnimationView();
             }
         });
-        Button bigFrameBt = findViewById(R.id.big_frame_texture_view);
-        bigFrameBt.setOnClickListener(new View.OnClickListener() {
+        mBigFrameBt = findViewById(R.id.big_frame_texture_view);
+        mBigFrameBt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!mIsInited) {
                     return;
                 }
-                if (mCurrentIndex == 3) {
-                    return;
-                }
-                mCurrentIndex = 3;
+                updateCurrentSelectedBt(mBigFrameBt);
 
                 stopAnimationView();
                 mAnimationImageView.setVisibility(View.GONE);
@@ -88,17 +84,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 showBigFrameView();
             }
         });
-        Button bigAnimationBtn = findViewById(R.id.big_animation_drawable);
-        bigAnimationBtn.setOnClickListener(new View.OnClickListener() {
+        mBigAnimationBt = findViewById(R.id.big_animation_drawable);
+        mBigAnimationBt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (!mIsInited) {
                     return;
                 }
-                if (mCurrentIndex == 4) {
-                    return;
-                }
-                mCurrentIndex = 4;
+                updateCurrentSelectedBt(mBigAnimationBt);
 
                 stopFrameViw();
                 mAnimationImageView.setVisibility(View.VISIBLE);
@@ -108,6 +101,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         });
 
         checkPermissions();
+    }
+
+    private void updateCurrentSelectedBt(Button button) {
+        if (mCurrentSelectedBt != null) {
+            mCurrentSelectedBt.setEnabled(true);
+        }
+        mCurrentSelectedBt = button;
+        mCurrentSelectedBt.setEnabled(false);
     }
 
     private void checkPermissions() {
