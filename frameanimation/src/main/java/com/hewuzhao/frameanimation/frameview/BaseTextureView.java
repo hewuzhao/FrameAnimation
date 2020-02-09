@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.TextureView;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by hewuzhao
@@ -25,8 +26,8 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     protected int mFrameDuration = 80;
     private Canvas mCanvas;
     private final AtomicBoolean mIsAlive = new AtomicBoolean(false);
-    protected final AtomicBoolean mIsStop = new AtomicBoolean(false);
-    protected final AtomicBoolean mIsDestroy = new AtomicBoolean(false);
+
+    protected final AtomicInteger mStatus = new AtomicInteger(FrameViewStatus.IDLE);
 
 
     public BaseTextureView(Context context) {
@@ -86,12 +87,12 @@ public abstract class BaseTextureView extends TextureView implements TextureView
 
     protected void stop() {
         Log.e(TAG, "stop.");
-        mIsStop.set(true);
+        mStatus.set(FrameViewStatus.STOP);
     }
 
     protected void start() {
         Log.e(TAG, "start.");
-        mIsStop.set(false);
+        mStatus.set(FrameViewStatus.START);
         startDrawThread();
     }
 
@@ -108,7 +109,7 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     }
 
     protected void destroy() {
-        mIsDestroy.set(true);
+        mStatus.set(FrameViewStatus.DESTROY);
         if (mDrawHandler != null) {
             mDrawHandler.removeCallbacksAndMessages(null);
             mDrawHandler = null;
@@ -178,16 +179,16 @@ public abstract class BaseTextureView extends TextureView implements TextureView
 
         @Override
         public void run() {
-            Log.e(TAG, "draw runnable, isStop: " + mIsStop.get());
+            Log.e(TAG, "draw runnable, status: " + mStatus.get());
             if (!mIsAlive.get()) {
                 return;
             }
-            if (mIsDestroy.get()) {
+            if (mStatus.get() == FrameViewStatus.DESTROY
+                    || mStatus.get() == FrameViewStatus.STOP
+                    || mStatus.get() == FrameViewStatus.END) {
                 return;
             }
-            if (mIsStop.get()) {
-                return;
-            }
+
             try {
                 mCanvas = lockCanvas();
                 onFrameDraw(mCanvas);

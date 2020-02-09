@@ -313,6 +313,7 @@ public class FrameTextureView extends BaseTextureView {
                 mRepeatedCount++;
             } else {
                 mRepeatedCount = 0;
+                mStatus.set(FrameViewStatus.END);
             }
         } else {
             drawOneFrame(canvas);
@@ -320,9 +321,12 @@ public class FrameTextureView extends BaseTextureView {
     }
 
     private void repeatDrawOneFrame(Canvas canvas) {
-        if (mIsDestroy.get()) {
+        if (mStatus.get() == FrameViewStatus.DESTROY
+                || mStatus.get() == FrameViewStatus.STOP
+                || mStatus.get() == FrameViewStatus.END) {
             return;
         }
+
         mFrameIndex.set(0);
         if (mDecodeHandlerThread == null) {
             mDecodeHandlerThread = new HandlerThread(DECODE_THREAD_NAME);
@@ -397,13 +401,14 @@ public class FrameTextureView extends BaseTextureView {
      */
     @Override
     public void start() {
-        super.start();
-        boolean isStarted = isStarted();
-        Log.i(TAG, "start frame textureview, is started: " + isStarted);
-        if (isStarted) {
+        Log.i(TAG, "start frame textureview, status: " + mStatus.get());
+        if (mStatus.get() == FrameViewStatus.START) {
             return;
         }
-        if (mIsDestroy.get()) {
+
+        super.start();
+
+        if (mStatus.get() == FrameViewStatus.DESTROY) {
             return;
         }
         mFrameIndex.set(0);
@@ -447,9 +452,6 @@ public class FrameTextureView extends BaseTextureView {
      * @return
      */
     private Bitmap decodeBitmap(FrameImage frameImage, BitmapFactory.Options options) {
-        if (mIsDestroy.get()) {
-            return null;
-        }
         options.inScaled = false;
         Bitmap bitmap = null;
         if (BlobCacheManager.getInstance().isImageBlobCacheInited()) {
@@ -480,9 +482,6 @@ public class FrameTextureView extends BaseTextureView {
     }
 
     private void putDecodedBitmap(FrameImage frameImage, BitmapFactory.Options options, LinkedBitmap linkedBitmap) {
-        if (mIsDestroy.get()) {
-            return;
-        }
         Bitmap bitmap = decodeBitmap(frameImage, options);
         if (bitmap == null) {
             return;
@@ -513,9 +512,6 @@ public class FrameTextureView extends BaseTextureView {
      * @return
      */
     private LinkedBitmap getDrawnBitmap() {
-        if (mIsDestroy.get()) {
-            return null;
-        }
         LinkedBitmap bitmap = null;
         try {
             if (mDrawnBitmapQueue != null) {
@@ -570,11 +566,10 @@ public class FrameTextureView extends BaseTextureView {
 
         @Override
         public void run() {
-            Log.e(TAG, "decode runnable, isStop: " + mIsStop.get());
-            if (mIsDestroy.get()) {
-                return;
-            }
-            if (mIsStop.get()) {
+            Log.e(TAG, "decode runnable, status: " + mStatus.get());
+            if (mStatus.get() == FrameViewStatus.DESTROY
+                    || mStatus.get() == FrameViewStatus.STOP
+                    || mStatus.get() == FrameViewStatus.END) {
                 return;
             }
 
