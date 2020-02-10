@@ -18,9 +18,10 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.hewuzhao.frameanimation.frameview.BaseTextureView;
 import com.hewuzhao.frameanimation.frameview.FrameImage;
 import com.hewuzhao.frameanimation.frameview.FrameImageParser;
+import com.hewuzhao.frameanimation.frameview.FrameRepeatMode;
+import com.hewuzhao.frameanimation.frameview.FrameScaleType;
 import com.hewuzhao.frameanimation.frameview.FrameTextureView;
 
 import java.util.Arrays;
@@ -28,6 +29,10 @@ import java.util.List;
 
 import pub.devrel.easypermissions.EasyPermissions;
 
+/**
+ * @author hewuzhao
+ * @date 2020-02-10
+ */
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
     private static final String TAG = "MainActivity";
 
@@ -143,31 +148,31 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     int scaleType;
                     switch (text) {
                         case "CENTER": {
-                            scaleType = BaseTextureView.ScaleType.CENTER;
+                            scaleType = FrameScaleType.CENTER;
                             break;
                         }
                         case "CENTER_INSIDE": {
-                            scaleType = BaseTextureView.ScaleType.CENTER_INSIDE;
+                            scaleType = FrameScaleType.CENTER_INSIDE;
                             break;
                         }
                         case "CENTER_CROP": {
-                            scaleType = BaseTextureView.ScaleType.CENTER_CROP;
+                            scaleType = FrameScaleType.CENTER_CROP;
                             break;
                         }
                         case "FIT_END": {
-                            scaleType = BaseTextureView.ScaleType.FIT_END;
+                            scaleType = FrameScaleType.FIT_END;
                             break;
                         }
                         case "FIT_CENTER": {
-                            scaleType = BaseTextureView.ScaleType.FIT_CENTER;
+                            scaleType = FrameScaleType.FIT_CENTER;
                             break;
                         }
                         case "FIT_START": {
-                            scaleType = BaseTextureView.ScaleType.FIT_START;
+                            scaleType = FrameScaleType.FIT_START;
                             break;
                         }
                         default: {
-                            scaleType = BaseTextureView.ScaleType.FIT_XY;
+                            scaleType = FrameScaleType.FIT_XY;
                         }
                     }
                     mFrameView.setScaleType(scaleType);
@@ -192,16 +197,16 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     int repeatMode;
                     switch (text) {
                         case "ONCE": {
-                            repeatMode = BaseTextureView.RepeatMode.ONCE;
+                            repeatMode = FrameRepeatMode.ONCE;
                             break;
                         }
                         case "TWICE": {
-                            repeatMode = BaseTextureView.RepeatMode.TWICE;
+                            repeatMode = FrameRepeatMode.TWICE;
                             break;
                         }
                         case "INFINITE":
                         default: {
-                            repeatMode = BaseTextureView.RepeatMode.INFINITE;
+                            repeatMode = FrameRepeatMode.INFINITE;
                         }
                     }
                     mFrameView.setRepeatMode(repeatMode);
@@ -277,7 +282,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         if (frameImageList != null && frameImageList.size() > 0) {
             mFrameView.setFrameImageList(frameImageList);
             mFrameView.setFrameInterval(60);
-            mFrameView.setRepeatMode(BaseTextureView.RepeatMode.INFINITE);
+            mFrameView.setRepeatMode(FrameRepeatMode.INFINITE);
             mFrameView.start();
 
         }
@@ -295,7 +300,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         if (frameImageList != null && frameImageList.size() > 0) {
             mFrameView.setFrameImageList(frameImageList);
             mFrameView.setFrameInterval(60);
-            mFrameView.setRepeatMode(BaseTextureView.RepeatMode.INFINITE);
+            mFrameView.setRepeatMode(FrameRepeatMode.INFINITE);
             mFrameView.start();
 
         }

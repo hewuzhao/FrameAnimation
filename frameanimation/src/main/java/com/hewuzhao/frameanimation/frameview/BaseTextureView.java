@@ -12,16 +12,14 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.TextureView;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by hewuzhao
- * on 2020-02-01
+ * @author hewuzhao
+ * @date 2020-02-01
  */
 public abstract class BaseTextureView extends TextureView implements TextureView.SurfaceTextureListener {
     private static final String TAG = "BaseTextureView";
@@ -34,8 +32,8 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     private final AtomicBoolean mIsAlive = new AtomicBoolean(false);
     protected final AtomicInteger mStatus = new AtomicInteger(FrameViewStatus.IDLE);
     private final AtomicInteger mFrameInterval = new AtomicInteger(80);
-    @ScaleType
-    private int mScaleType = ScaleType.CENTER;
+    @FrameScaleType
+    private int mScaleType = FrameScaleType.CENTER;
     private HandlerThread mDrawHandlerThread;
     private int mLastScaleType = -1;
     private Handler mDrawHandler;
@@ -46,8 +44,8 @@ public abstract class BaseTextureView extends TextureView implements TextureView
     private int mLastDstWidth;
     private Canvas mCanvas;
 
-    @RepeatMode
-    protected int mRepeatMode = RepeatMode.INFINITE;
+    @FrameRepeatMode
+    protected int mRepeatMode = FrameRepeatMode.INFINITE;
     protected int mRepeatTimes;
     protected int mRepeatedCount;
 
@@ -148,7 +146,7 @@ public abstract class BaseTextureView extends TextureView implements TextureView
         }
     }
 
-    public void setScaleType(@ScaleType int scaleType) {
+    public void setScaleType(@FrameScaleType int scaleType) {
         mScaleType = scaleType;
     }
 
@@ -156,11 +154,11 @@ public abstract class BaseTextureView extends TextureView implements TextureView
         mFrameInterval.set(interval);
     }
 
-    public void setRepeatMode(@RepeatMode int repeatMode) {
+    public void setRepeatMode(@FrameRepeatMode int repeatMode) {
         mRepeatMode = repeatMode;
-        if (mRepeatMode == RepeatMode.ONCE) {
+        if (mRepeatMode == FrameRepeatMode.ONCE) {
             mRepeatTimes = 1;
-        } else if (mRepeatMode == RepeatMode.TWICE) {
+        } else if (mRepeatMode == FrameRepeatMode.TWICE) {
             mRepeatTimes = 2;
         }
     }
@@ -243,14 +241,14 @@ public abstract class BaseTextureView extends TextureView implements TextureView
         mLastDstHeight = dstHeight;
         mLastScaleType = mScaleType;
         switch (mScaleType) {
-            case ScaleType.MATRIX: {
+            case FrameScaleType.MATRIX: {
                 return;
             }
-            case ScaleType.CENTER: {
+            case FrameScaleType.CENTER: {
                 mDrawMatrix.setTranslate(Math.round((dstWidth - srcWidth) * 0.5f), Math.round((dstHeight - srcHeight) * 0.5f));
                 break;
             }
-            case ScaleType.CENTER_CROP: {
+            case FrameScaleType.CENTER_CROP: {
                 float scale;
                 float dx = 0f;
                 float dy = 0f;
@@ -266,7 +264,7 @@ public abstract class BaseTextureView extends TextureView implements TextureView
                 mDrawMatrix.postTranslate(dx, dy);
                 break;
             }
-            case ScaleType.CENTER_INSIDE: {
+            case FrameScaleType.CENTER_INSIDE: {
                 float scale;
                 //小于dst时不缩放
                 if (srcWidth <= dstWidth && srcHeight <= dstHeight) {
@@ -286,69 +284,6 @@ public abstract class BaseTextureView extends TextureView implements TextureView
                 mDrawMatrix.setRectToRect(srcRect, dstRect, MATRIX_SCALE_ARRAY.get(mScaleType - 1));
             }
         }
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface RepeatMode {
-        /**
-         * play once
-         */
-        int ONCE = 1;
-
-        /**
-         * play twice
-         */
-        int TWICE = 2;
-
-        /**
-         * play infinity
-         */
-        int INFINITE = 3;
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface ScaleType {
-        /**
-         * scale using the bitmap matrix when drawing.
-         */
-        int MATRIX = 0;
-
-        /**
-         * @see Matrix.ScaleToFit.FILL
-         */
-        int FIT_XY = 1;
-
-        /**
-         * @see Matrix.ScaleToFit.START
-         */
-        int FIT_START = 2;
-
-        /**
-         * @see Matrix.ScaleToFit.CENTER
-         */
-        int FIT_CENTER = 3;
-
-        /**
-         * @see Matrix.ScaleToFit.END
-         */
-        int FIT_END = 4;
-
-        /**
-         * Center the image in the view, but perform no scaling.
-         */
-        int CENTER = 5;
-
-        /**
-         * Scale the image uniformly (maintain the image's aspect ratio) so that both dimensions (width and height) of the image
-         * will be equal to or larger than the corresponding dimension of the view.
-         */
-        int CENTER_CROP = 6;
-
-        /**
-         * Scale the image uniformly (maintain the image's aspect ratio) so that both dimensions (width and height) of the image
-         * will be equal to or less than the corresponding dimension of the view.
-         */
-        int CENTER_INSIDE = 7;
     }
 
     /**

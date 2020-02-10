@@ -11,8 +11,8 @@ import com.hewuzhao.frameanimation.utils.ResourceUtil;
 import java.nio.ByteBuffer;
 
 /**
- * Created by hewuzhao
- * on 2020-02-01
+ * @author hewuzhao
+ * @date 2020-02-01
  */
 public class BlobCacheUtil {
     private static final String TAG = "BlobCacheUtil";

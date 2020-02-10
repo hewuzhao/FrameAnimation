@@ -13,8 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Created by hewuzhao
- * on 2020-02-01
+ * @author hewuzhao
+ * @date 2020-02-01
  */
 public class BlobCacheManager {
     private static final String TAG = "BlobCacheManager";

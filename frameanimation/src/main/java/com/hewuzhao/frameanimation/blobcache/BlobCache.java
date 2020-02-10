@@ -13,8 +13,8 @@ import java.util.Arrays;
 import java.util.zip.Adler32;
 
 /**
- * Created by hewuzhao
- * on 2020-02-01
+ * @author hewuzhao
+ * @date 2020-02-01
  */
 public class BlobCache implements Closeable {
     private static final String TAG = "BlobCache";

@@ -3,8 +3,8 @@ package com.hewuzhao.frameanimation;
 import android.app.Application;
 
 /**
- * Created by hewuzhao
- * on 2020-02-01
+ * @author hewuzhao
+ * @date 2020-02-01
  */
 public class FrameApplication extends Application {
 

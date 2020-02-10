@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by hewuzhao
- * on 2020-02-01
+ * @author hewuzhao
+ * @date 2020-02-01
  */
 public class FrameTextureView extends BaseTextureView {
     private static final String TAG = "FrameTextureView";
@@ -240,7 +240,7 @@ public class FrameTextureView extends BaseTextureView {
     protected void onFrameDraw(Canvas canvas) {
         if (isFinish()) {
             onFrameAnimationEnd();
-            if (mRepeatMode == RepeatMode.INFINITE) {
+            if (mRepeatMode == FrameRepeatMode.INFINITE) {
                 repeatDrawOneFrame(canvas);
             } else if (mRepeatedCount < mRepeatTimes) {
                 repeatDrawOneFrame(canvas);

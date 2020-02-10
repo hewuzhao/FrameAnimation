@@ -3,8 +3,8 @@ package com.hewuzhao.frameanimation.utils;
 import java.io.Closeable;
 
 /**
- * Created by hewuzhao
- * on 2020-02-07
+ * @author hewuzhao
+ * @date 2020-02-07
  */
 public class CommonUtil {
 

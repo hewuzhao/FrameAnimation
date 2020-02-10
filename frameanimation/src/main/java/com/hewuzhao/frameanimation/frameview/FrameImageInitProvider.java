@@ -15,8 +15,8 @@ import com.hewuzhao.frameanimation.blobcache.BlobCacheParams;
 import com.hewuzhao.frameanimation.blobcache.BlobCacheService;
 
 /**
- * Created by hewuzhao
- * on 2020-02-01
+ * @author hewuzhao
+ * @date 2020-02-01
  */
 public class FrameImageInitProvider extends ContentProvider {
     private static final String TAG = "FrameImageInitProvider";

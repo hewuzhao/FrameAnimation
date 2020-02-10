@@ -9,8 +9,8 @@ import com.hewuzhao.frameanimation.FrameApplication;
 import com.hewuzhao.frameanimation.frameview.FrameImage;
 
 /**
- * Created by hewuzhao
- * on 2020-02-02
+ * @author hewuzhao
+ * @date 2020-02-02
  */
 public class ResourceUtil {
 
