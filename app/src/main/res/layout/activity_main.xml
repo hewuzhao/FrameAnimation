@@ -9,18 +9,19 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/frame_view_part"
         android:layout_width="240dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:background="@android:color/darker_gray"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
             android:id="@+id/interval_view"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <androidx.appcompat.widget.AppCompatSeekBar
             android:id="@+id/frame_interval"
@@ -69,27 +70,27 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/small_frame_texture_view" />
 
+        <Button
+            android:id="@+id/small_animation_drawable"
+            android:layout_width="200dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="20dp"
+            android:text="原生帧动画 小图（&lt;1M）"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/big_frame_texture_view" />
+
+        <Button
+            android:id="@+id/big_animation_drawable"
+            android:layout_width="200dp"
+            android:layout_height="50dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="20dp"
+            android:text="原生帧动画 大图（&gt;=1M）"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/small_animation_drawable" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <Button
-        android:id="@+id/small_animation_drawable"
-        android:layout_width="200dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="20dp"
-        android:text="原生帧动画 小图（&lt;1M）"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/frame_view_part" />
-
-    <Button
-        android:id="@+id/big_animation_drawable"
-        android:layout_width="200dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="5dp"
-        android:layout_marginEnd="20dp"
-        android:text="原生帧动画 大图（&gt;=1M）"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/small_animation_drawable" />
 
     <com.hewuzhao.frameanimation.frameview.FrameTextureView
         android:id="@+id/frame_view"
@@ -104,6 +105,7 @@
         android:id="@+id/animation_image_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:scaleType="center"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/frame_view_part"

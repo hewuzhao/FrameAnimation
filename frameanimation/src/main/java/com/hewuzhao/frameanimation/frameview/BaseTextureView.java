@@ -71,12 +71,8 @@ public abstract class BaseTextureView extends TextureView implements TextureView
 
     protected void init() {
         mDrawMatrix = new Matrix();
+        setOpaque(false);
         setSurfaceTextureListener(this);
-    }
-
-    @Override
-    public boolean isOpaque() {
-        return false;
     }
 
     @Override

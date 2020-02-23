@@ -146,36 +146,45 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 if (view instanceof TextView) {
                     String text = ((TextView) view).getText().toString();
                     int scaleType;
+                    ImageView.ScaleType imageViewScaleType;
                     switch (text) {
                         case "CENTER": {
                             scaleType = FrameScaleType.CENTER;
+                            imageViewScaleType = ImageView.ScaleType.CENTER;
                             break;
                         }
                         case "CENTER_INSIDE": {
                             scaleType = FrameScaleType.CENTER_INSIDE;
+                            imageViewScaleType = ImageView.ScaleType.CENTER_INSIDE;
                             break;
                         }
                         case "CENTER_CROP": {
                             scaleType = FrameScaleType.CENTER_CROP;
+                            imageViewScaleType = ImageView.ScaleType.CENTER_CROP;
                             break;
                         }
                         case "FIT_END": {
                             scaleType = FrameScaleType.FIT_END;
+                            imageViewScaleType = ImageView.ScaleType.FIT_END;
                             break;
                         }
                         case "FIT_CENTER": {
                             scaleType = FrameScaleType.FIT_CENTER;
+                            imageViewScaleType = ImageView.ScaleType.FIT_CENTER;
                             break;
                         }
                         case "FIT_START": {
                             scaleType = FrameScaleType.FIT_START;
+                            imageViewScaleType = ImageView.ScaleType.FIT_START;
                             break;
                         }
                         default: {
                             scaleType = FrameScaleType.FIT_XY;
+                            imageViewScaleType = ImageView.ScaleType.FIT_XY;
                         }
                     }
                     mFrameView.setScaleType(scaleType);
+                    mAnimationImageView.setScaleType(imageViewScaleType);
                 }
             }
 
@@ -320,15 +329,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     private void showSmallAnimationView() {
         stopAnimationView();
-        mAnimationImageView.setBackgroundResource(R.drawable.small_animation_drawable);
-        AnimationDrawable animation = (AnimationDrawable) mAnimationImageView.getBackground();
+        mAnimationImageView.setImageResource(R.drawable.small_animation_drawable);
+        AnimationDrawable animation = (AnimationDrawable) mAnimationImageView.getDrawable();
         animation.start();
     }
 
     private void showBigAnimationView() {
         stopAnimationView();
-        mAnimationImageView.setBackgroundResource(R.drawable.big_animation_drawable);
-        AnimationDrawable animation = (AnimationDrawable) mAnimationImageView.getBackground();
+        mAnimationImageView.setImageResource(R.drawable.big_animation_drawable);
+        AnimationDrawable animation = (AnimationDrawable) mAnimationImageView.getDrawable();
         animation.start();
     }
 

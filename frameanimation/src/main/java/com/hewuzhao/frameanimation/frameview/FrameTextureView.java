@@ -293,6 +293,7 @@ public class FrameTextureView extends BaseTextureView {
         if (linkedBitmap != null && linkedBitmap.bitmap != null) {
             clearCanvas(canvas);
             configureDrawMatrix(linkedBitmap.bitmap);
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
             canvas.drawBitmap(linkedBitmap.bitmap, mDrawMatrix, null);
             putDrawnBitmap(linkedBitmap);
         }
@@ -322,15 +323,6 @@ public class FrameTextureView extends BaseTextureView {
      */
     private boolean isFinish() {
         return mFrameIndex.get() >= mFrameImageList.size() - 1;
-    }
-
-    /**
-     * whether frame animation is started
-     *
-     * @return true: animation is started, false: animation is not started
-     */
-    private boolean isStarted() {
-        return mFrameIndex.get() != INVALID_INDEX;
     }
 
     /**
