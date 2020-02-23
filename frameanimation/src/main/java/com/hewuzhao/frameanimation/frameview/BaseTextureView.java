@@ -215,8 +215,8 @@ public abstract class BaseTextureView extends TextureView implements TextureView
 
     /**
      * 根据ScaleType配置绘制bitmap的Matrix
-     *
-     * @param bitmap
+     * <p>
+     * 参考ImageView的配置规则
      */
     protected void configureDrawMatrix(Bitmap bitmap) {
         int srcWidth = bitmap.getWidth();
@@ -250,10 +250,10 @@ public abstract class BaseTextureView extends TextureView implements TextureView
                 float dy = 0f;
                 //按照高缩放
                 if (dstHeight * srcWidth > dstWidth * srcHeight) {
-                    scale = dstHeight / srcHeight;
+                    scale = (float) dstHeight / (float) srcHeight;
                     dx = (dstWidth - srcWidth * scale) * 0.5f;
                 } else {
-                    scale = dstWidth / srcWidth;
+                    scale = (float) dstWidth / (float) srcWidth;
                     dy = (dstHeight - srcHeight * scale) * 0.5f;
                 }
                 mDrawMatrix.setScale(scale, scale);
@@ -266,7 +266,7 @@ public abstract class BaseTextureView extends TextureView implements TextureView
                 if (srcWidth <= dstWidth && srcHeight <= dstHeight) {
                     scale = 1.0f;
                 } else {
-                    scale = Math.min(dstWidth / srcWidth, dstHeight / srcHeight);
+                    scale = Math.min((float) dstWidth / (float) srcWidth, (float) dstHeight / (float) srcHeight);
                 }
                 float dx = Math.round((dstWidth - srcWidth * scale) * 0.5f);
                 float dy = Math.round((dstHeight - srcHeight * scale) * 0.5f);
