@@ -291,7 +291,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private void showSmallFrameView() {
         stopFrameViw();
         if (mFrameView.setFrameImageListPath("small_image_list.xml")) {
-            mFrameView.setFrameInterval(60);
             mFrameView.start();
         }
     }
@@ -299,7 +298,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private void showBigFrameView() {
         stopFrameViw();
         if (mFrameView.setFrameImageListPath("big_image_list.xml")) {
-            mFrameView.setFrameInterval(60);
             mFrameView.start();
         }
     }
