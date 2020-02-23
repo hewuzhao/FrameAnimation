@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatSeekBar;
 import androidx.appcompat.widget.AppCompatSpinner;
+import androidx.appcompat.widget.SwitchCompat;
 
 import android.Manifest;
 import android.graphics.drawable.AnimationDrawable;
@@ -13,6 +14,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -60,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private AppCompatSpinner mScaleType;
     private AppCompatSpinner mRepeatMode;
     private AppCompatSeekBar mFrameInterval;
+    private SwitchCompat mBlobCacheSwitch;
     private TextView mIntervalView;
 
     private boolean mIsInited = false;
@@ -252,6 +255,14 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                     progress = 1;
                 }
                 mFrameView.setFrameInterval(progress);
+            }
+        });
+
+        mBlobCacheSwitch = findViewById(R.id.blob_cache_switch);
+        mBlobCacheSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                BlobCacheManager.getInstance().setIsUseBlobCache(isChecked);
             }
         });
 

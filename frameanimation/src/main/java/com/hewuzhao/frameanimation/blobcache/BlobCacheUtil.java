@@ -53,53 +53,8 @@ public class BlobCacheUtil {
         return result;
     }
 
-    public static int[] getCacheBitmapWidthAndHeight(String name) {
-        BytesBufferPool.BytesBuffer bytesBuffer = BlobCacheManager.getInstance().getBufferPool().get();
-        try {
-            BlobCache.LookupRequest request = new BlobCache.LookupRequest();
-            byte[] key = getBytes(name);
-            request.key = crc64Long(key);
-            request.buffer = bytesBuffer.data;
-
-            if (BlobCacheManager.getInstance().getBlobCache().lookup(request)) {
-                if (isSameKey(key, request.buffer, request.length)) {
-                    bytesBuffer.data = request.buffer;
-                    bytesBuffer.offset = key.length + 8;
-                    bytesBuffer.length = request.length - bytesBuffer.offset;
-
-//                    byte[] wb = new byte[4];
-                    BytesBufferPool.BytesBuffer widthBuffer = BlobCacheManager.getInstance().getWidthAndHeightBufferPool().get();
-                    byte[] wb = widthBuffer.data;
-                    System.arraycopy(bytesBuffer.data, bytesBuffer.length, wb, 0, 4);
-//                    byte[] hb = new byte[4];
-                    BytesBufferPool.BytesBuffer heightBuffer = BlobCacheManager.getInstance().getWidthAndHeightBufferPool().get();
-                    byte[] hb = heightBuffer.data;
-                    System.arraycopy(bytesBuffer.data, bytesBuffer.length + 4, hb, 0, 4);
-                    int width = ResourceUtil.byte2int(wb);
-                    int height = ResourceUtil.byte2int(hb);
-
-                    BlobCacheManager.getInstance().getWidthAndHeightBufferPool().recycle(widthBuffer);
-                    BlobCacheManager.getInstance().getWidthAndHeightBufferPool().recycle(heightBuffer);
-
-                    int[] wh = new int[2];
-                    wh[0] = width;
-                    wh[1] = height;
-                    return wh;
-                }
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Log.e(TAG, "getCacheBitmapWidthAndHeight error, ex: " + ex);
-        } finally {
-            BlobCacheManager.getInstance().getBufferPool().recycle(bytesBuffer);
-        }
-
-        return null;
-    }
-
     public static Bitmap getCacheBitmapByName(String name, BitmapFactory.Options options) {
 
-        long t1 = System.currentTimeMillis();
         BytesBufferPool.BytesBuffer bytesBuffer = BlobCacheManager.getInstance().getBufferPool().get();
         try {
 
@@ -114,11 +69,9 @@ public class BlobCacheUtil {
                     bytesBuffer.offset = key.length + 8;
                     bytesBuffer.length = request.length - bytesBuffer.offset;
 
-//                    byte[] wb = new byte[4];
                     BytesBufferPool.BytesBuffer widthBuffer = BlobCacheManager.getInstance().getWidthAndHeightBufferPool().get();
                     byte[] wb = widthBuffer.data;
                     System.arraycopy(bytesBuffer.data, bytesBuffer.length, wb, 0, 4);
-//                    byte[] hb = new byte[4];
                     BytesBufferPool.BytesBuffer heightBuffer = BlobCacheManager.getInstance().getWidthAndHeightBufferPool().get();
                     byte[] hb = heightBuffer.data;
                     System.arraycopy(bytesBuffer.data, bytesBuffer.length + 4, hb, 0, 4);
@@ -151,7 +104,6 @@ public class BlobCacheUtil {
             Log.e(TAG, "decode bitmap from blobcache error, name: " + name + ", ex: " + ex);
         } finally {
             BlobCacheManager.getInstance().getBufferPool().recycle(bytesBuffer);
-            Log.e(TAG, "decode bitmap from blobcache, cost time: " + (System.currentTimeMillis() - t1) + ", name: " + name);
         }
 
         return null;

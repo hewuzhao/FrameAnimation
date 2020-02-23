@@ -28,12 +28,14 @@ public class BlobCacheManager {
     private boolean mOldCheckDone = false;
 
     private AtomicBoolean mImageBlobCacheInited;
+    private AtomicBoolean mIsUseBlobCache;
 
     private BytesBufferPool mDataBufferPool;
     private BytesBufferPool mWidthAndHeightBufferPool;
 
     private BlobCacheManager() {
         mImageBlobCacheInited = new AtomicBoolean(false);
+        mIsUseBlobCache = new AtomicBoolean(true);
         mBlobCacheMap = new ConcurrentHashMap<>();
         mDataBufferPool = new BytesBufferPool(4, 5 * 1024 * 1024);
         mWidthAndHeightBufferPool = new BytesBufferPool(4, 4);
@@ -134,6 +136,14 @@ public class BlobCacheManager {
 
     public boolean isImageBlobCacheInited() {
         return mImageBlobCacheInited.get();
+    }
+
+    public void setIsUseBlobCache(boolean isUseBlobCache) {
+        mIsUseBlobCache.set(isUseBlobCache);
+    }
+
+    public boolean isUseBlobCache() {
+        return mIsUseBlobCache.get();
     }
 
     public BytesBufferPool getBufferPool() {

@@ -293,21 +293,26 @@ public class FrameTextureView extends BaseTextureView {
     private Bitmap decodeBitmap(FrameImage frameImage, BitmapFactory.Options options) {
         options.inScaled = false;
         Bitmap bitmap = null;
-        if (BlobCacheManager.getInstance().isImageBlobCacheInited()) {
+        long t0 = System.currentTimeMillis();
+        if (BlobCacheManager.getInstance().isImageBlobCacheInited() && BlobCacheManager.getInstance().isUseBlobCache()) {
             bitmap = BlobCacheUtil.getCacheBitmapByName(frameImage.getName(), options);
-            if (bitmap != null) {
-                return bitmap;
-            }
         }
 
         long t1 = System.currentTimeMillis();
+        t0 = t1 - t0;
         try {
-            bitmap = ResourceUtil.getBitmap(frameImage, options);
-            Log.e(TAG, "decode bitmap from stream, cost time: " + (System.currentTimeMillis() - t1));
+            if (bitmap == null) {
+                bitmap = ResourceUtil.getBitmap(frameImage, options);
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
             Log.e(TAG, "decode, ex: " + ex);
+        } finally {
+            t1 = System.currentTimeMillis() - t1;
         }
+        String bitmapSize = bitmap == null ? "0B" : CommonUtil.convertUnit(bitmap.getByteCount());
+        Log.e(TAG, "decode bitmap, name: " + frameImage.getName() + ", bitmap size: " + bitmapSize
+                + ", BlobCache: " + t0 + ", Stream: " + t1);
         return bitmap;
     }
 
