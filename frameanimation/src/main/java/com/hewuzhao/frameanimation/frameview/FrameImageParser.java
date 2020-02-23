@@ -27,7 +27,6 @@ public class FrameImageParser {
 
     private static final String ATTRIBUTE_FROM = "from";
     private static final String ATTRIBUTE_NAME = "name";
-    private static final String ATTRIBUTE_DURATION = "duration";
 
 
     /**
@@ -104,16 +103,9 @@ public class FrameImageParser {
             throw new IllegalStateException();
         }
 
-        String dura = parser.getAttributeValue(null, ATTRIBUTE_DURATION);
-        long duration = 100;
-        if (!TextUtils.isEmpty(dura)) {
-            duration = Long.parseLong(dura);
-        }
-
         FrameImage info = new FrameImage();
         info.setFrom(from);
         info.setName(name);
-        info.setDuration(duration);
 
         parser.nextTag();
         parser.require(XmlPullParser.END_TAG, null, TAG_FRAME);

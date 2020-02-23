@@ -11,8 +11,6 @@ public class FrameImage {
 
     private String name;
 
-    private long duration;
-
     public String getFrom() {
         return from;
     }
@@ -29,20 +27,11 @@ public class FrameImage {
         this.name = name;
     }
 
-    public long getDuration() {
-        return duration;
-    }
-
-    public void setDuration(long duration) {
-        this.duration = duration;
-    }
-
     @NonNull
     @Override
     public String toString() {
         return "{ from = " + from
                 + "; name = " + name
-                + "; duration = " + duration
                 + " }";
     }
 }

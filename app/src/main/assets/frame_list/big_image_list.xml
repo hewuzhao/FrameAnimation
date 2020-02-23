@@ -1,103 +1,43 @@
 <frame-list>
 
-    <frame
-        from="mipmap"
-        name="big_00"
-        duration="100" />
+    <frame name="big_00" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_01"
-        duration="100" />
+    <frame name="big_01" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_02"
-        duration="100" />
+    <frame name="big_02" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_03"
-        duration="100" />
+    <frame name="big_03" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_04"
-        duration="100" />
+    <frame name="big_04" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_05"
-        duration="100" />
+    <frame name="big_05" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_06"
-        duration="100" />
+    <frame name="big_06" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_07"
-        duration="100" />
+    <frame name="big_07" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_08"
-        duration="100" />
+    <frame name="big_08" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_09"
-        duration="100" />
+    <frame name="big_09" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_10"
-        duration="100" />
+    <frame name="big_10" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_11"
-        duration="100" />
+    <frame name="big_11" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_12"
-        duration="100" />
+    <frame name="big_12" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_13"
-        duration="100" />
+    <frame name="big_13" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_14"
-        duration="100" />
+    <frame name="big_14" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_15"
-        duration="100" />
+    <frame name="big_15" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_16"
-        duration="100" />
+    <frame name="big_16" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_17"
-        duration="100" />
+    <frame name="big_17" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_18"
-        duration="100" />
+    <frame name="big_18" from="mipmap" />
 
-    <frame
-        from="mipmap"
-        name="big_19"
-        duration="100" />
+    <frame name="big_19" from="mipmap" />
 
 </frame-list>

@@ -12,9 +12,12 @@ import android.util.AttributeSet;
 import android.util.Log;
 
 import com.hewuzhao.frameanimation.blobcache.BlobCacheManager;
+import com.hewuzhao.frameanimation.blobcache.BlobCacheParams;
 import com.hewuzhao.frameanimation.blobcache.BlobCacheUtil;
+import com.hewuzhao.frameanimation.utils.CommonUtil;
 import com.hewuzhao.frameanimation.utils.ResourceUtil;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -100,6 +103,27 @@ public class FrameTextureView extends BaseTextureView {
     protected void onFrameDrawFinish() {
     }
 
+    public boolean setFrameImageListPath(String path) {
+        if (path == null || path.isEmpty()) {
+            return false;
+        }
+        List<FrameImage> frameImageList;
+        try {
+            frameImageList = new FrameImageParser().parse(BlobCacheParams.NAME_FRAME_LIST_FOLDER + File.separator + path);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(TAG, "setFrameImageListPath, ex: " + e);
+            return false;
+        }
+
+        if (CommonUtil.isEmpty(frameImageList)) {
+            return false;
+        }
+
+        setFrameImageList(frameImageList);
+        return true;
+    }
+
     /**
      * set the materials of frame animation which is an array of resource
      */
@@ -134,106 +158,6 @@ public class FrameTextureView extends BaseTextureView {
                 putDecodedBitmap(mFrameImageList.get(index), mDecodeOptions, new LinkedBitmap());
             }
         });
-    }
-
-    /**
-     * recycle the bitmap used by frame animation.
-     * Usually it should be invoked when the ui of frame animation is no longer visible
-     */
-    @Override
-    public void destroy() {
-        Log.i(TAG, "destroy FrameTextureView.");
-        super.destroy();
-
-        if (mDecodeHandler != null) {
-            mDecodeHandler.removeCallbacksAndMessages(null);
-            mDecodeHandler = null;
-        }
-
-        if (mDecodeRunnable != null) {
-            mDecodeRunnable.destroy();
-            mDecodeRunnable = null;
-        }
-
-        if (mDecodeHandlerThread != null) {
-            mDecodeHandlerThread.quit();
-            mDecodeHandlerThread = null;
-        }
-
-        destroyDrawnBitmapQueue();
-        destroyDecodedBitmapQueue();
-
-        if (mFrameImageList != null) {
-            mFrameImageList.clear();
-        }
-    }
-
-    private void destroyDecodedBitmapQueue() {
-        try {
-            if (mDecodedBitmapQueue != null) {
-                mDecodedBitmapQueue.destroy();
-                mDecodedBitmapQueue = null;
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private void destroyDrawnBitmapQueue() {
-        try {
-            if (mDrawnBitmapQueue != null) {
-                mDrawnBitmapQueue.destroy();
-                mDrawnBitmapQueue = null;
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    @Override
-    protected void resetData() {
-        Log.e(TAG, "resetData().");
-        super.resetData();
-        reset();
-        if (mDecodeHandler != null) {
-            mDecodeHandler.removeCallbacksAndMessages(null);
-            mDecodeHandler = null;
-        }
-
-        if (mDecodeRunnable != null) {
-            mDecodeRunnable.destroy();
-            mDecodeRunnable = null;
-        }
-
-        if (mDecodeHandlerThread != null) {
-            mDecodeHandlerThread.quit();
-            mDecodeHandlerThread = null;
-        }
-
-        try {
-            if (mDrawnBitmapQueue != null) {
-                mDrawnBitmapQueue.resetData();
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Log.e(TAG, "drawn bitmap queue reset data, ex: " + ex);
-        }
-
-        try {
-            if (mDecodedBitmapQueue != null) {
-                mDecodedBitmapQueue.resetData();
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Log.e(TAG, "decoded bitmap queue reset data, ex: " + ex);
-        }
-
-        if (mFrameImageList != null) {
-            mFrameImageList.clear();
-        }
-        if (mDecodeOptions != null) {
-            mDecodeOptions = null;
-        }
     }
 
     @Override
@@ -359,20 +283,6 @@ public class FrameTextureView extends BaseTextureView {
         mDecodeHandler.post(mDecodeRunnable);
     }
 
-    @Override
-    public void stop() {
-        super.stop();
-
-    }
-
-    /**
-     * clear out the drawing on canvas,preparing for the next frame
-     * * @param canvas
-     */
-    private void clearCanvas(Canvas canvas) {
-        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-    }
-
     /**
      * decode bitmap by BitmapFactory.decodeStream(), it is about twice faster than BitmapFactory.decodeResource()
      *
@@ -450,6 +360,119 @@ public class FrameTextureView extends BaseTextureView {
             e.printStackTrace();
         }
         return bitmap;
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+    }
+
+    /**
+     * clear out the drawing on canvas,preparing for the next frame
+     * * @param canvas
+     */
+    private void clearCanvas(Canvas canvas) {
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+    }
+
+    /**
+     * recycle the bitmap used by frame animation.
+     * Usually it should be invoked when the ui of frame animation is no longer visible
+     */
+    @Override
+    public void destroy() {
+        Log.i(TAG, "destroy FrameTextureView.");
+        super.destroy();
+
+        if (mDecodeHandler != null) {
+            mDecodeHandler.removeCallbacksAndMessages(null);
+            mDecodeHandler = null;
+        }
+
+        if (mDecodeRunnable != null) {
+            mDecodeRunnable.destroy();
+            mDecodeRunnable = null;
+        }
+
+        if (mDecodeHandlerThread != null) {
+            mDecodeHandlerThread.quit();
+            mDecodeHandlerThread = null;
+        }
+
+        destroyDrawnBitmapQueue();
+        destroyDecodedBitmapQueue();
+
+        if (mFrameImageList != null) {
+            mFrameImageList.clear();
+        }
+    }
+
+    private void destroyDecodedBitmapQueue() {
+        try {
+            if (mDecodedBitmapQueue != null) {
+                mDecodedBitmapQueue.destroy();
+                mDecodedBitmapQueue = null;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void destroyDrawnBitmapQueue() {
+        try {
+            if (mDrawnBitmapQueue != null) {
+                mDrawnBitmapQueue.destroy();
+                mDrawnBitmapQueue = null;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void resetData() {
+        Log.e(TAG, "resetData().");
+        super.resetData();
+        reset();
+        if (mDecodeHandler != null) {
+            mDecodeHandler.removeCallbacksAndMessages(null);
+            mDecodeHandler = null;
+        }
+
+        if (mDecodeRunnable != null) {
+            mDecodeRunnable.destroy();
+            mDecodeRunnable = null;
+        }
+
+        if (mDecodeHandlerThread != null) {
+            mDecodeHandlerThread.quit();
+            mDecodeHandlerThread = null;
+        }
+
+        try {
+            if (mDrawnBitmapQueue != null) {
+                mDrawnBitmapQueue.resetData();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Log.e(TAG, "drawn bitmap queue reset data, ex: " + ex);
+        }
+
+        try {
+            if (mDecodedBitmapQueue != null) {
+                mDecodedBitmapQueue.resetData();
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Log.e(TAG, "decoded bitmap queue reset data, ex: " + ex);
+        }
+
+        if (mFrameImageList != null) {
+            mFrameImageList.clear();
+        }
+        if (mDecodeOptions != null) {
+            mDecodeOptions = null;
+        }
     }
 
     /**

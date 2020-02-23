@@ -1,6 +1,7 @@
 package com.hewuzhao.frameanimation.utils;
 
 import java.io.Closeable;
+import java.util.Collection;
 
 /**
  * @author hewuzhao
@@ -18,5 +19,14 @@ public class CommonUtil {
         }
     }
 
+    public static boolean isEmpty(Collection collection) {
+        return collection == null || collection.isEmpty();
+    }
 
+    public static int size(Collection collection) {
+        if (collection == null) {
+            return 0;
+        }
+        return collection.size();
+    }
 }

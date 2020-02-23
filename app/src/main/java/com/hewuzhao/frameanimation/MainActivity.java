@@ -9,7 +9,6 @@ import android.Manifest;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -18,8 +17,7 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.hewuzhao.frameanimation.frameview.FrameImage;
-import com.hewuzhao.frameanimation.frameview.FrameImageParser;
+import com.hewuzhao.frameanimation.blobcache.BlobCacheManager;
 import com.hewuzhao.frameanimation.frameview.FrameRepeatMode;
 import com.hewuzhao.frameanimation.frameview.FrameScaleType;
 import com.hewuzhao.frameanimation.frameview.FrameTextureView;
@@ -281,37 +279,17 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     private void showSmallFrameView() {
         stopFrameViw();
-        List<FrameImage> frameImageList = null;
-        try {
-            frameImageList = new FrameImageParser().parse("frame_list/small_image_list.xml");
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "BlobCacheIntentService, ex: " + e);
-        }
-        if (frameImageList != null && frameImageList.size() > 0) {
-            mFrameView.setFrameImageList(frameImageList);
+        if (mFrameView.setFrameImageListPath("small_image_list.xml")) {
             mFrameView.setFrameInterval(60);
-            mFrameView.setRepeatMode(FrameRepeatMode.INFINITE);
             mFrameView.start();
-
         }
     }
 
     private void showBigFrameView() {
         stopFrameViw();
-        List<FrameImage> frameImageList = null;
-        try {
-            frameImageList = new FrameImageParser().parse("frame_list/big_image_list.xml");
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "BlobCacheIntentService, ex: " + e);
-        }
-        if (frameImageList != null && frameImageList.size() > 0) {
-            mFrameView.setFrameImageList(frameImageList);
+        if (mFrameView.setFrameImageListPath("big_image_list.xml")) {
             mFrameView.setFrameInterval(60);
-            mFrameView.setRepeatMode(FrameRepeatMode.INFINITE);
             mFrameView.start();
-
         }
     }
 
@@ -344,6 +322,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     private void init() {
         mIsInited = true;
+        startCheckImageCache();
+    }
+
+    private void startCheckImageCache() {
+        BlobCacheManager.startCheckBlobCache();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.hewuzhao.frameanimation.blobcache;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
 
@@ -141,5 +142,11 @@ public class BlobCacheManager {
 
     public BytesBufferPool getWidthAndHeightBufferPool() {
         return mWidthAndHeightBufferPool;
+    }
+
+    public static void startCheckBlobCache() {
+        Intent intent = new Intent(FrameApplication.sApplication, BlobCacheService.class);
+        intent.putExtra(BlobCacheParams.FLAG_IMAGE_CACHE_INIT, BlobCacheParams.FLAG_IMAGE_CACHE_INIT_VALUE);
+        FrameApplication.sApplication.startService(intent);
     }
 }

@@ -10,10 +10,5 @@
 
         <service android:name=".blobcache.BlobCacheService" />
 
-        <provider
-            android:name=".frameview.FrameImageInitProvider"
-            android:authorities="com.hewuzhao.frameanimation.frameimageinitprovider"
-            android:exported="false" />
-
     </application>
 </manifest>

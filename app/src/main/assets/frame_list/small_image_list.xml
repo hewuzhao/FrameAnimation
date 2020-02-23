@@ -1,103 +1,43 @@
 <frame-list>
 
-    <frame
-        from="drawable"
-        name="small_00"
-        duration="100" />
+    <frame name="small_00" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_01"
-        duration="100" />
+    <frame name="small_01" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_02"
-        duration="100" />
+    <frame name="small_02" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_03"
-        duration="100" />
+    <frame name="small_03" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_04"
-        duration="100" />
+    <frame name="small_04" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_05"
-        duration="100" />
+    <frame name="small_05" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_06"
-        duration="100" />
+    <frame name="small_06" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_07"
-        duration="100" />
+    <frame name="small_07" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_08"
-        duration="100" />
+    <frame name="small_08" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_09"
-        duration="100" />
+    <frame name="small_09" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_10"
-        duration="100" />
+    <frame name="small_10" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_11"
-        duration="100" />
+    <frame name="small_11" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_12"
-        duration="100" />
+    <frame name="small_12" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_13"
-        duration="100" />
+    <frame name="small_13" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_14"
-        duration="100" />
+    <frame name="small_14" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_15"
-        duration="100" />
+    <frame name="small_15" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_16"
-        duration="100" />
+    <frame name="small_16" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_17"
-        duration="100" />
+    <frame name="small_17" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_18"
-        duration="100" />
+    <frame name="small_18" from="drawable" />
 
-    <frame
-        from="drawable"
-        name="small_19"
-        duration="100" />
+    <frame name="small_19" from="drawable" />
 
 </frame-list>

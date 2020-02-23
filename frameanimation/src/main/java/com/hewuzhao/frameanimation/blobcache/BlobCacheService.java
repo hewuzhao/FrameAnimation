@@ -20,8 +20,6 @@ import java.util.List;
 public class BlobCacheService extends IntentService {
     private static final String TAG = "BlobCacheService";
 
-    private static final String NAME_FRAME_LIST_FOLDER = "frame_list";
-
     public BlobCacheService() {
         super("BlobCacheService");
     }
@@ -34,6 +32,7 @@ public class BlobCacheService extends IntentService {
 
         int flag = intent.getIntExtra(BlobCacheParams.FLAG_IMAGE_CACHE_INIT, 0);
         if (flag != BlobCacheParams.FLAG_IMAGE_CACHE_INIT_VALUE) {
+            Log.e(TAG, "is not init cache flag, return.");
             return;
         }
 
@@ -43,14 +42,16 @@ public class BlobCacheService extends IntentService {
         List<FrameImage> frameImageList = new ArrayList<>();
 
         try {
-            String[] files = getBaseContext().getAssets().list(NAME_FRAME_LIST_FOLDER);
+            String[] files = getBaseContext().getAssets().list(BlobCacheParams.NAME_FRAME_LIST_FOLDER);
             if (files != null && files.length > 0) {
                 for (String file : files) {
-                    List<FrameImage> tmp = new FrameImageParser().parse(NAME_FRAME_LIST_FOLDER + File.separator + file);
+                    List<FrameImage> tmp = new FrameImageParser().parse(BlobCacheParams.NAME_FRAME_LIST_FOLDER + File.separator + file);
                     if (tmp != null && tmp.size() > 0) {
                         frameImageList.addAll(tmp);
                     }
                 }
+            } else {
+                Log.e(TAG, "there is no frame list file in assets frame_list file.");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -61,6 +62,7 @@ public class BlobCacheService extends IntentService {
 
         if (frameImageList.size() <= 0) {
             BlobCacheManager.getInstance().setImageBlobCacheInited();
+            Log.e(TAG, "there is no frame image list.");
             return;
         }
 
