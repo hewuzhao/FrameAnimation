@@ -49,20 +49,12 @@ public class ResourceUtil {
     }
 
 
-    public static Bitmap getBitmap(FrameImage info, BitmapFactory.Options options) {
-        if (TextUtils.equals("drawable", info.getFrom())) {
-            return BitmapFactory.decodeResource(FrameApplication.sApplication.getResources(), getDrawableId(FrameApplication.sApplication, info.getName()), options);
-        } else if (TextUtils.equals("mipmap", info.getFrom())) {
-            return BitmapFactory.decodeResource(FrameApplication.sApplication.getResources(), getMipmapId(FrameApplication.sApplication, info.getName()), options);
-        }
-        return null;
+    public static Bitmap getBitmap(String drawableName, BitmapFactory.Options options) {
+        return BitmapFactory.decodeResource(FrameApplication.sApplication.getResources(),
+                getDrawableId(FrameApplication.sApplication, drawableName), options);
     }
 
-    public static int getDrawableId(Context context, String resName) {
+    private static int getDrawableId(Context context, String resName) {
         return context.getResources().getIdentifier(resName, "drawable", context.getPackageName());
-    }
-
-    private static int getMipmapId(Context context, String resName) {
-        return context.getResources().getIdentifier(resName, "mipmap", context.getPackageName());
     }
 }

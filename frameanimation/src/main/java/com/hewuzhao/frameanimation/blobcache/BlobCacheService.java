@@ -41,37 +41,37 @@ public class BlobCacheService extends IntentService {
         long t1 = System.currentTimeMillis();
         List<FrameImage> frameImageList = new ArrayList<>();
 
-        try {
-            String[] files = getBaseContext().getAssets().list(BlobCacheParams.NAME_FRAME_LIST_FOLDER);
-            if (files != null && files.length > 0) {
-                for (String file : files) {
-                    List<FrameImage> tmp = new FrameImageParser().parse(BlobCacheParams.NAME_FRAME_LIST_FOLDER + File.separator + file);
-                    if (tmp != null && tmp.size() > 0) {
-                        frameImageList.addAll(tmp);
-                    }
-                }
-            } else {
-                Log.e(TAG, "there is no frame list file in assets frame_list file.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "BlobCacheService, ex: " + e);
-        }
+//        try {
+//            String[] files = getBaseContext().getAssets().list(BlobCacheParams.NAME_FRAME_LIST_FOLDER);
+//            if (files != null && files.length > 0) {
+//                for (String file : files) {
+//                    List<FrameImage> tmp = new FrameImageParser().parse(BlobCacheParams.NAME_FRAME_LIST_FOLDER + File.separator + file);
+//                    if (tmp != null && tmp.size() > 0) {
+//                        frameImageList.addAll(tmp);
+//                    }
+//                }
+//            } else {
+//                Log.e(TAG, "there is no frame list file in assets frame_list file.");
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            Log.e(TAG, "BlobCacheService, ex: " + e);
+//        }
 
         Log.e(TAG, "parse time: " + (System.currentTimeMillis() - t1));
 
         if (frameImageList.size() <= 0) {
-            BlobCacheManager.getInstance().setImageBlobCacheInited();
+//            BlobCacheManager.getInstance().setImageBlobCacheInited();
             Log.e(TAG, "there is no frame image list.");
             return;
         }
 
-        for (FrameImage info : frameImageList) {
-            if (!BlobCacheUtil.checkCacheByName(info.getName())) {
-                BlobCacheUtil.saveImageByBlobCache(info);
-            }
-        }
-        BlobCacheManager.getInstance().setImageBlobCacheInited();
+//        for (FrameImage info : frameImageList) {
+//            if (!BlobCacheUtil.checkCacheByName(info.getName())) {
+//                BlobCacheUtil.saveImageByBlobCache(info);
+//            }
+//        }
+//        BlobCacheManager.getInstance().setImageBlobCacheInited();
 
         Log.e(TAG, "service end, total time: " + (System.currentTimeMillis() - t1));
     }

@@ -3,6 +3,7 @@ package com.hewuzhao.frameanimation.blobcache;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.hewuzhao.frameanimation.FrameApplication;
@@ -11,7 +12,6 @@ import com.hewuzhao.frameanimation.bytespool.BytesBufferPool;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author hewuzhao
@@ -20,30 +20,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class BlobCacheManager {
     private static final String TAG = "BlobCacheManager";
 
+    private static final String NAME_BLOBCACHE_SP = "BLOBCACHE_SP";
+
     private static final String NAME_BLOBCACHE_SHAREDPREFERENCES = "BLOBCACHE_SHAREDPREFERENCES";
     private static final String KEY_CACHE_UP_TO_DATE = "cache-up-to-date";
 
     private Map<String, BlobCache> mBlobCacheMap;
-    private BlobCache mBlobCache;
-    private boolean mOldCheckDone = false;
-
-    private AtomicBoolean mImageBlobCacheInited;
-    private AtomicBoolean mIsUseBlobCache;
+    private Map<String, Boolean> mBlobCacheInitedMap;
+    private boolean mOldCheckDoneMap = false;
 
     private BytesBufferPool mDataBufferPool;
     private BytesBufferPool mWidthAndHeightBufferPool;
 
     private BlobCacheManager() {
-        mImageBlobCacheInited = new AtomicBoolean(false);
-        mIsUseBlobCache = new AtomicBoolean(true);
         mBlobCacheMap = new ConcurrentHashMap<>();
+        mBlobCacheInitedMap = new ConcurrentHashMap<>();
+
         mDataBufferPool = new BytesBufferPool(4, 5 * 1024 * 1024);
         mWidthAndHeightBufferPool = new BytesBufferPool(4, 4);
-        mBlobCache = getCache(FrameApplication.sApplication,
-                BlobCacheParams.IMAGE_CACHE_FILE_BLOBCHCHE,
-                BlobCacheParams.IMAGE_CACHE_MAX_ENTRIES,
-                BlobCacheParams.IMAGE_CACHE_MAX_BYTES,
-                BlobCacheParams.IMAGE_CACHE_VERSION);
     }
 
     private static class SingletonHolder {
@@ -54,19 +48,33 @@ public class BlobCacheManager {
         return SingletonHolder.INSTANCE;
     }
 
+    public BlobCache getBlobCache(String fileName) {
+        if (TextUtils.isEmpty(fileName)) {
+            return null;
+        }
+        SharedPreferences sp = FrameApplication.sApplication.getSharedPreferences(NAME_BLOBCACHE_SP,
+                Context.MODE_PRIVATE);
+        int version = sp.getInt(fileName, 1);
+        return getBlobCache(fileName,
+                BlobCacheParams.DEFAULT_BLOB_CACHE_MAX_ENTRIES,
+                BlobCacheParams.DEFAULT_BLOB_CACHE_MAX_BYTES,
+                version);
+    }
+
     /**
      * Return null when we cannot instantiate a BlobCache, e.g.:
      * there is no SD card found.
      * This can only be called from data thread.
      */
-    private BlobCache getCache(Context context, String filename,
+    public BlobCache getBlobCache(String filename,
                                int maxEntries, int maxBytes, int version) {
-        if (context == null) {
+        if (TextUtils.isEmpty(filename)) {
             return null;
         }
-        if (!mOldCheckDone) {
+        Context context = FrameApplication.sApplication;
+        if (!mOldCheckDoneMap) {
             removeOldFilesIfNecessary(context);
-            mOldCheckDone = true;
+            mOldCheckDoneMap = true;
         }
         BlobCache cache = mBlobCacheMap.get(filename);
         if (cache == null) {
@@ -126,24 +134,16 @@ public class BlobCacheManager {
         BlobCache.deleteFiles(prefix + "bookmark");
     }
 
-    public BlobCache getBlobCache() {
-        return mBlobCache;
+    public void setBlobCacheInited(String fileName, boolean value) {
+        mBlobCacheInitedMap.put(fileName, value);
     }
 
-    public void setImageBlobCacheInited() {
-        mImageBlobCacheInited.set(true);
-    }
-
-    public boolean isImageBlobCacheInited() {
-        return mImageBlobCacheInited.get();
-    }
-
-    public void setIsUseBlobCache(boolean isUseBlobCache) {
-        mIsUseBlobCache.set(isUseBlobCache);
-    }
-
-    public boolean isUseBlobCache() {
-        return mIsUseBlobCache.get();
+    public boolean isBlobCacheInited(String fileName) {
+        if (TextUtils.isEmpty(fileName)) {
+            return false;
+        }
+        Boolean value = mBlobCacheInitedMap.get(fileName);
+        return value == null ? false : value;
     }
 
     public BytesBufferPool getBufferPool() {

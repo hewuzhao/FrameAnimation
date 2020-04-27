@@ -16,22 +16,13 @@ public class BlobCacheParams {
     public static final String NAME_FRAME_LIST_FOLDER = "frame_list";
 
     /**
-     * BlobCache缓存文件名
-     */
-    public static final String IMAGE_CACHE_FILE_BLOBCHCHE = "frame_ani_image_blobcache";
-
-    /**
      * 缓存的最大文件个数
      */
-    public static final int IMAGE_CACHE_MAX_ENTRIES = 5000;
+    public static final int DEFAULT_BLOB_CACHE_MAX_ENTRIES = 1000;
 
     /**
      * 最大的缓存容量
      */
-    public static final int IMAGE_CACHE_MAX_BYTES = 950 * 1024 * 1024;
+    public static final int DEFAULT_BLOB_CACHE_MAX_BYTES = 950 * 1024 * 1024;
 
-    /**
-     * 版本号
-     */
-    public static final int IMAGE_CACHE_VERSION = 1;
 }

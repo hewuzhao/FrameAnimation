@@ -84,31 +84,20 @@
             android:layout_width="200dp"
             android:layout_height="50dp"
             android:text="逐帧动画 大图（&gt;=1M）"
-            app:layout_constraintBottom_toTopOf="@id/small_animation_drawable"
+            app:layout_constraintBottom_toTopOf="@id/bt_stop"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/small_frame_texture_view" />
 
         <Button
-            android:id="@+id/small_animation_drawable"
+            android:id="@+id/bt_stop"
             android:layout_width="200dp"
             android:layout_height="50dp"
-            android:text="原生帧动画 小图（&lt;1M）"
-            app:layout_constraintBottom_toTopOf="@id/big_animation_drawable"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/big_frame_texture_view" />
-
-        <Button
-            android:id="@+id/big_animation_drawable"
-            android:layout_width="200dp"
-            android:layout_height="50dp"
-            android:layout_marginBottom="10dp"
-            android:text="原生帧动画 大图（&gt;=1M）"
+            android:text="停止"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/small_animation_drawable" />
+            app:layout_constraintTop_toBottomOf="@id/big_frame_texture_view" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -116,17 +105,8 @@
         android:id="@+id/frame_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/frame_view_part"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <ImageView
-        android:id="@+id/animation_image_view"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:scaleType="center"
-        android:visibility="gone"
+        app:useCache="true"
+        app:src="@drawable/big_animation_drawable"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/frame_view_part"
         app:layout_constraintStart_toStartOf="parent"

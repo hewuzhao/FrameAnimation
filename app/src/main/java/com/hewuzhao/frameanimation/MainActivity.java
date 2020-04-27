@@ -7,8 +7,6 @@ import androidx.appcompat.widget.AppCompatSpinner;
 import androidx.appcompat.widget.SwitchCompat;
 
 import android.Manifest;
-import android.graphics.drawable.AnimationDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -53,11 +51,9 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     );
 
     private FrameTextureView mFrameView;
-    private ImageView mAnimationImageView;
     private Button mSmallFrameBt;
-    private Button mSmallAnimationBt;
+    private Button mBtStop;
     private Button mBigFrameBt;
-    private Button mBigAnimationBt;
     private Button mCurrentSelectedBt;
     private AppCompatSpinner mScaleType;
     private AppCompatSpinner mRepeatMode;
@@ -72,7 +68,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mFrameView = findViewById(R.id.frame_view);
-        mAnimationImageView = findViewById(R.id.animation_image_view);
         mSmallFrameBt = findViewById(R.id.small_frame_texture_view);
         mSmallFrameBt.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -80,27 +75,25 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 if (!mIsInited) {
                     return;
                 }
+                mBtStop.setEnabled(true);
                 updateCurrentSelectedBt(mSmallFrameBt);
 
-                stopAnimationView();
-                mAnimationImageView.setVisibility(View.GONE);
                 mFrameView.setVisibility(View.VISIBLE);
                 showSmallFrameView();
             }
         });
-        mSmallAnimationBt = findViewById(R.id.small_animation_drawable);
-        mSmallAnimationBt.setOnClickListener(new View.OnClickListener() {
+        mBtStop = findViewById(R.id.bt_stop);
+        mBtStop.setEnabled(false);
+        mBtStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!mIsInited) {
-                    return;
+                if (mFrameView.isStop()) {
+                    mFrameView.start();
+                    mBtStop.setText("停止");
+                } else {
+                    stopFrameViw();
+                    mBtStop.setText("开始");
                 }
-                updateCurrentSelectedBt(mSmallAnimationBt);
-
-                stopFrameViw();
-                mAnimationImageView.setVisibility(View.VISIBLE);
-                mFrameView.setVisibility(View.GONE);
-                showSmallAnimationView();
             }
         });
         mBigFrameBt = findViewById(R.id.big_frame_texture_view);
@@ -110,27 +103,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 if (!mIsInited) {
                     return;
                 }
+                mBtStop.setEnabled(true);
                 updateCurrentSelectedBt(mBigFrameBt);
 
-                stopAnimationView();
-                mAnimationImageView.setVisibility(View.GONE);
                 mFrameView.setVisibility(View.VISIBLE);
                 showBigFrameView();
-            }
-        });
-        mBigAnimationBt = findViewById(R.id.big_animation_drawable);
-        mBigAnimationBt.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!mIsInited) {
-                    return;
-                }
-                updateCurrentSelectedBt(mBigAnimationBt);
-
-                stopFrameViw();
-                mAnimationImageView.setVisibility(View.VISIBLE);
-                mFrameView.setVisibility(View.GONE);
-                showBigAnimationView();
             }
         });
 
@@ -185,7 +162,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                         }
                     }
                     mFrameView.setScaleType(scaleType);
-                    mAnimationImageView.setScaleType(imageViewScaleType);
                 }
             }
 
@@ -262,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         mBlobCacheSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                BlobCacheManager.getInstance().setIsUseBlobCache(isChecked);
+                mFrameView.setUseCache(isChecked);
             }
         });
 
@@ -289,49 +265,27 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
 
     private void showSmallFrameView() {
-        stopFrameViw();
-        if (mFrameView.setFrameImageListPath("small_image_list.xml")) {
-            mFrameView.start();
-        }
+        mFrameView.setFrameSrc(R.drawable.small_animation_drawable);
+        mFrameView.start();
     }
 
     private void showBigFrameView() {
-        stopFrameViw();
-        if (mFrameView.setFrameImageListPath("big_image_list.xml")) {
-            mFrameView.start();
-        }
+        mFrameView.setFrameSrc(R.drawable.big_animation_drawable);
+        mFrameView.start();
     }
 
     private void stopFrameViw() {
         mFrameView.stop();
     }
 
-    private void stopAnimationView() {
-        Drawable drawable = mAnimationImageView.getBackground();
-        if (drawable instanceof AnimationDrawable) {
-            AnimationDrawable animation = (AnimationDrawable) drawable;
-            animation.stop();
-        }
-    }
-
-    private void showSmallAnimationView() {
-        stopAnimationView();
-        mAnimationImageView.setImageResource(R.drawable.small_animation_drawable);
-        AnimationDrawable animation = (AnimationDrawable) mAnimationImageView.getDrawable();
-        animation.start();
-    }
-
-    private void showBigAnimationView() {
-        stopAnimationView();
-        mAnimationImageView.setImageResource(R.drawable.big_animation_drawable);
-        AnimationDrawable animation = (AnimationDrawable) mAnimationImageView.getDrawable();
-        animation.start();
+    private void destroyFrameView() {
+        mFrameView.destroy();
     }
 
 
     private void init() {
         mIsInited = true;
-        startCheckImageCache();
+//        startCheckImageCache();
     }
 
     private void startCheckImageCache() {
@@ -360,8 +314,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mFrameView != null) {
-            mFrameView.destroy();
-        }
+        destroyFrameView();
     }
 }

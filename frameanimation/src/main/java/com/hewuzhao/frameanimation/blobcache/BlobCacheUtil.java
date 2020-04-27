@@ -5,7 +5,6 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.hewuzhao.frameanimation.bytespool.BytesBufferPool;
-import com.hewuzhao.frameanimation.frameview.FrameImage;
 import com.hewuzhao.frameanimation.utils.ResourceUtil;
 
 import java.nio.ByteBuffer;
@@ -53,7 +52,7 @@ public class BlobCacheUtil {
         return result;
     }
 
-    public static Bitmap getCacheBitmapByName(String name, BitmapFactory.Options options) {
+    public static Bitmap getCacheBitmapByName(BlobCache blobCache, String name, BitmapFactory.Options options) {
 
         BytesBufferPool.BytesBuffer bytesBuffer = BlobCacheManager.getInstance().getBufferPool().get();
         try {
@@ -63,7 +62,7 @@ public class BlobCacheUtil {
             request.key = crc64Long(key);
             request.buffer = bytesBuffer.data;
 
-            if (BlobCacheManager.getInstance().getBlobCache().lookup(request)) {
+            if (blobCache.lookup(request)) {
                 if (isSameKey(key, request.buffer, request.length)) {
                     bytesBuffer.data = request.buffer;
                     bytesBuffer.offset = key.length + 8;
@@ -109,19 +108,19 @@ public class BlobCacheUtil {
         return null;
     }
 
-    public static void saveImageByBlobCache(FrameImage info) {
+    public static void saveImageByBlobCache(String drawableName, BlobCache blobCache) {
         long t1 = System.currentTimeMillis();
         try {
             BitmapFactory.Options options = new BitmapFactory.Options();
-            Bitmap bitmap = ResourceUtil.getBitmap(info, options);
+            Bitmap bitmap = ResourceUtil.getBitmap(drawableName, options);
             if (bitmap == null) {
-                Log.e(TAG, "save image to blob cache, bitmap is null, name: " + info.getName());
+                Log.e(TAG, "save image to blob cache, bitmap is null, name: " + drawableName);
                 return;
             }
             final int width = options.outWidth;
             final int height = options.outHeight;
 
-            byte[] key = BlobCacheUtil.getBytes(info.getName());
+            byte[] key = BlobCacheUtil.getBytes(drawableName);
             ByteBuffer bu = ByteBuffer.allocate(bitmap.getByteCount());
             bitmap.copyPixelsToBuffer(bu);
             byte[] value = bu.array();
@@ -131,13 +130,13 @@ public class BlobCacheUtil {
             buffer.put(ResourceUtil.int2byte(height));
             buffer.put(key);
 
-            BlobCacheManager.getInstance().getBlobCache().insert(BlobCacheUtil.getCacheKey(info.getName()), buffer.array());
+            blobCache.insert(BlobCacheUtil.getCacheKey(drawableName), buffer.array());
         } catch (Exception ex) {
             ex.printStackTrace();
-            Log.e(TAG, "save imge by blob cache error, name: " + info.getName() + ", ex: " + ex);
+            Log.e(TAG, "save imge by blob cache error, name: " + drawableName + ", ex: " + ex);
         } finally {
-            BlobCacheManager.getInstance().getBlobCache().syncAll();
-            Log.e(TAG, "save image to blob cache, cost time: " + (System.currentTimeMillis() - t1) + ", name: " + info.getName());
+            blobCache.syncAll();
+            Log.e(TAG, "save image to blob cache, cost time: " + (System.currentTimeMillis() - t1) + ", name: " + drawableName);
         }
     }
 
@@ -150,7 +149,7 @@ public class BlobCacheUtil {
         return BlobCacheUtil.crc64Long(key);
     }
 
-    public static boolean checkCacheByName(String name) {
+    public static boolean checkCacheByName(String name, BlobCache blobCache) {
         if (name == null || name.isEmpty()) {
             Log.e(TAG, "check cache by name, name is null.");
             return false;
@@ -158,7 +157,7 @@ public class BlobCacheUtil {
         try {
             byte[] key = BlobCacheUtil.getBytes(name);
             long cacheKey = BlobCacheUtil.crc64Long(key);
-            byte[] data = BlobCacheManager.getInstance().getBlobCache().lookup(cacheKey);
+            byte[] data = blobCache.lookup(cacheKey);
             if (data == null) {
                 Log.e(TAG, "check cache by name,  name: " + name + ", data is null.");
                 return false;
