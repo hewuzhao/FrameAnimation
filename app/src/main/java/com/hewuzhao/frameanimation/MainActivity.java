@@ -13,12 +13,10 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.hewuzhao.frameanimation.blobcache.BlobCacheManager;
-import com.hewuzhao.frameanimation.frameview.FrameRepeatMode;
 import com.hewuzhao.frameanimation.frameview.FrameScaleType;
 import com.hewuzhao.frameanimation.frameview.FrameTextureView;
 
@@ -56,7 +54,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private Button mBigFrameBt;
     private Button mCurrentSelectedBt;
     private AppCompatSpinner mScaleType;
-    private AppCompatSpinner mRepeatMode;
     private AppCompatSeekBar mFrameInterval;
     private SwitchCompat mBlobCacheSwitch;
     private TextView mIntervalView;
@@ -87,11 +84,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         mBtStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mFrameView.isStop()) {
+                if (mFrameView.isPause()) {
                     mFrameView.start();
                     mBtStop.setText("停止");
                 } else {
-                    stopFrameViw();
+                    pauseFrameViw();
                     mBtStop.setText("开始");
                 }
             }
@@ -124,78 +121,36 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 if (view instanceof TextView) {
                     String text = ((TextView) view).getText().toString();
                     int scaleType;
-                    ImageView.ScaleType imageViewScaleType;
                     switch (text) {
                         case "CENTER": {
                             scaleType = FrameScaleType.CENTER;
-                            imageViewScaleType = ImageView.ScaleType.CENTER;
                             break;
                         }
                         case "CENTER_INSIDE": {
                             scaleType = FrameScaleType.CENTER_INSIDE;
-                            imageViewScaleType = ImageView.ScaleType.CENTER_INSIDE;
                             break;
                         }
                         case "CENTER_CROP": {
                             scaleType = FrameScaleType.CENTER_CROP;
-                            imageViewScaleType = ImageView.ScaleType.CENTER_CROP;
                             break;
                         }
                         case "FIT_END": {
                             scaleType = FrameScaleType.FIT_END;
-                            imageViewScaleType = ImageView.ScaleType.FIT_END;
                             break;
                         }
                         case "FIT_CENTER": {
                             scaleType = FrameScaleType.FIT_CENTER;
-                            imageViewScaleType = ImageView.ScaleType.FIT_CENTER;
                             break;
                         }
                         case "FIT_START": {
                             scaleType = FrameScaleType.FIT_START;
-                            imageViewScaleType = ImageView.ScaleType.FIT_START;
                             break;
                         }
                         default: {
                             scaleType = FrameScaleType.FIT_XY;
-                            imageViewScaleType = ImageView.ScaleType.FIT_XY;
                         }
                     }
                     mFrameView.setScaleType(scaleType);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
-        mRepeatMode = findViewById(R.id.repeat_mode);
-        mRepeatMode.setAdapter(new ArrayAdapter(this, R.layout.spinner_item_view, REPEAT_MODE));
-        mRepeatMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (parent == null || view == null) {
-                    return;
-                }
-                if (view instanceof TextView) {
-                    String text = ((TextView) view).getText().toString();
-                    int repeatMode;
-                    switch (text) {
-                        case "ONCE": {
-                            repeatMode = FrameRepeatMode.ONCE;
-                            break;
-                        }
-                        case "TWICE": {
-                            repeatMode = FrameRepeatMode.TWICE;
-                            break;
-                        }
-                        case "INFINITE":
-                        default: {
-                            repeatMode = FrameRepeatMode.INFINITE;
-                        }
-                    }
-                    mFrameView.setRepeatMode(repeatMode);
                 }
             }
 
@@ -265,17 +220,15 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
 
     private void showSmallFrameView() {
-        mFrameView.setFrameSrc(R.drawable.small_animation_drawable);
-        mFrameView.start();
+        mFrameView.startWithFrameSrc(R.drawable.small_animation_drawable);
     }
 
     private void showBigFrameView() {
-        mFrameView.setFrameSrc(R.drawable.big_animation_drawable);
-        mFrameView.start();
+        mFrameView.startWithFrameSrc(R.drawable.big_animation_drawable);
     }
 
-    private void stopFrameViw() {
-        mFrameView.stop();
+    private void pauseFrameViw() {
+        mFrameView.pause();
     }
 
     private void destroyFrameView() {

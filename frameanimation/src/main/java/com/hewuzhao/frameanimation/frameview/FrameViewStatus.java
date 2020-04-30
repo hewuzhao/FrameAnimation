@@ -8,8 +8,8 @@ import java.lang.annotation.RetentionPolicy;
 import static com.hewuzhao.frameanimation.frameview.FrameViewStatus.DESTROY;
 import static com.hewuzhao.frameanimation.frameview.FrameViewStatus.END;
 import static com.hewuzhao.frameanimation.frameview.FrameViewStatus.IDLE;
+import static com.hewuzhao.frameanimation.frameview.FrameViewStatus.PAUSE;
 import static com.hewuzhao.frameanimation.frameview.FrameViewStatus.START;
-import static com.hewuzhao.frameanimation.frameview.FrameViewStatus.STOP;
 
 /**
  * @author hewuzhao
@@ -17,7 +17,7 @@ import static com.hewuzhao.frameanimation.frameview.FrameViewStatus.STOP;
  * <p>
  * 逐帧动画的播放状态
  */
-@IntDef({IDLE, START, STOP, END, DESTROY})
+@IntDef({IDLE, START, PAUSE, END, DESTROY})
 @Retention(RetentionPolicy.SOURCE)
 public @interface FrameViewStatus {
 
@@ -32,17 +32,17 @@ public @interface FrameViewStatus {
     int START = 2;
 
     /**
-     * 停止
+     * 暂停
      */
-    int STOP = 4;
+    int PAUSE = 3;
 
     /**
      * 结束
      */
-    int END = 5;
+    int END = 4;
 
     /**
      * 彻底销毁
      */
-    int DESTROY = 6;
+    int DESTROY = 5;
 }

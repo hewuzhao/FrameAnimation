@@ -86,8 +86,13 @@ public class BlobCacheUtil {
                         bitmap = options.inBitmap;
                     }
                     if (bitmap == null) {
-                        Log.e(TAG, "option inBitmap is null or width and height not fit, name: " + name);
+                        Log.e(TAG, "option inBitmap is null or width and height not fit, name: "
+                                + name + ", width=" + width + ", height=" + height);
+
                         bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                        if (bitmap == null) {
+                            Log.e(TAG, "Bitmap.createBitmap bitmap is null, may be something error, name: " + name);
+                        }
                     }
 
                     if (bitmap != null) {
@@ -97,6 +102,8 @@ public class BlobCacheUtil {
                         return bitmap;
                     }
                 }
+            } else {
+                Log.e(TAG, "getCacheBitmapByName, not found, name=" + name);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -131,6 +138,7 @@ public class BlobCacheUtil {
             buffer.put(key);
 
             blobCache.insert(BlobCacheUtil.getCacheKey(drawableName), buffer.array());
+            Log.e(TAG, "save image to blob cache success, name: " + drawableName);
         } catch (Exception ex) {
             ex.printStackTrace();
             Log.e(TAG, "save imge by blob cache error, name: " + drawableName + ", ex: " + ex);
@@ -162,6 +170,7 @@ public class BlobCacheUtil {
                 Log.e(TAG, "check cache by name,  name: " + name + ", data is null.");
                 return false;
             }
+            Log.e(TAG, "check cache by name,  name: " + name + ", data is exit.");
             return true;
         } catch (Exception ex) {
             ex.printStackTrace();

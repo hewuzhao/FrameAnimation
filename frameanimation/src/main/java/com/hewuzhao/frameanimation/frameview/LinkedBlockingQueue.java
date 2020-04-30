@@ -241,6 +241,7 @@ public class LinkedBlockingQueue {
         isStop.set(true);
         clear();
         isStop.set(false);
+        destroy.set(false);
     }
 
     private void clear() {
@@ -251,15 +252,6 @@ public class LinkedBlockingQueue {
             if (p == null) {
                 return;
             }
-            while (p != null) {
-                if (p.bitmap != null) {
-                    p.bitmap.recycle();
-                    p.bitmap = null;
-                }
-                p = p.next;
-            }
-
-            p = tail;
             while (p != null) {
                 if (p.bitmap != null) {
                     p.bitmap.recycle();
