@@ -8,7 +8,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.PorterDuff;
-import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -24,9 +23,9 @@ import com.hewuzhao.frameanimation.blobcache.BlobCacheManager;
 import com.hewuzhao.frameanimation.blobcache.BlobCacheUtil;
 import com.hewuzhao.frameanimation.utils.CommonUtil;
 import com.hewuzhao.frameanimation.utils.FrameParseUtil;
+import com.hewuzhao.frameanimation.utils.MatrixUtil;
 import com.hewuzhao.frameanimation.utils.ResourceUtil;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,9 +45,11 @@ public class FrameTextureView extends TextureView {
      */
     private static final int BUFFER_SIZE = 3;
 
-    private final List<Matrix.ScaleToFit> MATRIX_SCALE_ARRAY = Arrays.asList(
-            Matrix.ScaleToFit.FILL, Matrix.ScaleToFit.START, Matrix.ScaleToFit.CENTER, Matrix.ScaleToFit.END
-    );
+    /**
+     * 默认的一帧时间间隔
+     */
+    private static final int DEFAULT_DURATION = 80;
+
     private boolean mUseCache;
     private FrameList mFrameList;
     private BlobCache mBlobCache;
@@ -72,11 +73,6 @@ public class FrameTextureView extends TextureView {
      * 状态
      */
     protected final AtomicInteger mStatus = new AtomicInteger(FrameViewStatus.IDLE);
-
-    /**
-     * 帧动画的时间间隔
-     */
-    private final AtomicInteger mFrameInterval = new AtomicInteger(80);
 
     /**
      * 缩放类型
@@ -119,12 +115,7 @@ public class FrameTextureView extends TextureView {
      */
     private final BitmapFactory.Options mDecodeOptions = new BitmapFactory.Options();
 
-    private int mLastScaleType = -1;
     protected Matrix mDrawMatrix;
-    private int mLastSrcHeight;
-    private int mLastDstHeight;
-    private int mLastSrcWidth;
-    private int mLastDstWidth;
 
     public FrameTextureView(Context context) {
         super(context);
@@ -141,31 +132,33 @@ public class FrameTextureView extends TextureView {
         init(context, attrs);
     }
 
-    public FrameTextureView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
-        init(context, attrs);
-    }
-
     protected void init(Context context, AttributeSet attrs) {
         TypedArray array = context.obtainStyledAttributes(attrs, R.styleable.FrameTextureView);
-        mUseCache = array.getBoolean(R.styleable.FrameTextureView_useCache, true);
-        int src = array.getResourceId(R.styleable.FrameTextureView_src, -1);
+        mUseCache = array.getBoolean(R.styleable.FrameTextureView_useCache, false);
+        final int src = array.getResourceId(R.styleable.FrameTextureView_src, -1);
         array.recycle();
-        if (src != -1) {
-            mFrameList = FrameParseUtil.parse(src);
+        if (mUseCache && src != -1) {
+            startDecodeThread(new Runnable() {
+                @Override
+                public void run() {
+                    mFrameList = FrameParseUtil.parse(src);
 
-            mBlobCache = BlobCacheManager.getInstance().getBlobCache(
-                    mFrameList.getFileName(),
-                    mFrameList.getMaxEntries(),
-                    mFrameList.getMaxBytes(),
-                    mFrameList.getVersion());
+                    mBlobCache = BlobCacheManager.getInstance().getBlobCache(
+                            mFrameList.getFileName(),
+                            mFrameList.getMaxEntries(),
+                            mFrameList.getMaxBytes(),
+                            mFrameList.getVersion());
 
-            for (FrameItem item : mFrameList.getFrameItemList()) {
-                if (!BlobCacheUtil.checkCacheByName(item.getDrawableName(), mBlobCache)) {
-                    BlobCacheUtil.saveImageByBlobCache(item.getDrawableName(), mBlobCache);
+                    List<FrameItem> list = mFrameList.getFrameItemList();
+                    if (!CommonUtil.isEmpty(list)) {
+                        for (FrameItem item : mFrameList.getFrameItemList()) {
+                            if (!BlobCacheUtil.checkCacheByName(item.getDrawableName(), mBlobCache)) {
+                                BlobCacheUtil.saveImageByBlobCache(item.getDrawableName(), mBlobCache);
+                            }
+                        }
+                    }
                 }
-            }
-
+            });
         }
 
         mDecodeOptions.inMutable = true;
@@ -202,10 +195,6 @@ public class FrameTextureView extends TextureView {
         });
     }
 
-    public void setUseCache(boolean useCache) {
-        mUseCache = useCache;
-    }
-
     private void setStatus(@FrameViewStatus int status) {
         mStatus.set(status);
     }
@@ -217,10 +206,11 @@ public class FrameTextureView extends TextureView {
      */
     public void startWithFrameSrc(final @DrawableRes int resId) {
         Log.e(TAG, "startWithFrameSrc, resId=" + resId);
-        // 暂停播放
-        setStatus(FrameViewStatus.PAUSE);
+        // 初始化状态
+        setStatus(FrameViewStatus.IDLE);
         // 重置资源
-        resetDataForChangeSrc();
+        releaseBitmapQueue();
+        mDecodeOptions.inBitmap = null;
 
         // 解码新的资源列表数据
         startDecodeThread(new Runnable() {
@@ -228,20 +218,26 @@ public class FrameTextureView extends TextureView {
             public void run() {
                 // 解析动画列表数据
                 mFrameList = FrameParseUtil.parse(resId);
-
-                mBlobCache = BlobCacheManager.getInstance().getBlobCache(
-                        mFrameList.getFileName(),
-                        mFrameList.getMaxEntries(),
-                        mFrameList.getMaxBytes(),
-                        mFrameList.getVersion());
-
-                // 检查和缓存到BlobCache
-                for (FrameItem item : mFrameList.getFrameItemList()) {
-                    if (!BlobCacheUtil.checkCacheByName(item.getDrawableName(), mBlobCache)) {
-                        BlobCacheUtil.saveImageByBlobCache(item.getDrawableName(), mBlobCache);
-                    }
+                List<FrameItem> list = mFrameList.getFrameItemList();
+                if (CommonUtil.isEmpty(list)) {
+                    Log.e(TAG, "startWithFrameSrc, frame list parse error, list is empty.");
+                    return;
                 }
 
+                if (mUseCache) {
+                    mBlobCache = BlobCacheManager.getInstance().getBlobCache(
+                            mFrameList.getFileName(),
+                            mFrameList.getMaxEntries(),
+                            mFrameList.getMaxBytes(),
+                            mFrameList.getVersion());
+
+                    // 检查和缓存到BlobCache
+                    for (FrameItem item : list) {
+                        if (!BlobCacheUtil.checkCacheByName(item.getDrawableName(), mBlobCache)) {
+                            BlobCacheUtil.saveImageByBlobCache(item.getDrawableName(), mBlobCache);
+                        }
+                    }
+                }
 
                 // 纠正索引
                 mIndexDecoding.set(0);
@@ -254,24 +250,14 @@ public class FrameTextureView extends TextureView {
                 int index = mIndexDecoding.getAndIncrement();
                 LinkedBitmap linkedBitmap = new LinkedBitmap();
                 linkedBitmap.bitmap = decodeBitmap(mFrameList.getFrameItemByIndex(index), mDecodeOptions);
-                try {
-                    mDecodedBitmapQueue.put(linkedBitmap);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "startWithFrameSrc 1, ex=" + e);
-                }
+                putDecodedBitmap(linkedBitmap);
 
                 index = mIndexDecoding.getAndIncrement();
                 LinkedBitmap linkedBitmap1 = new LinkedBitmap();
                 linkedBitmap1.bitmap = decodeBitmap(mFrameList.getFrameItemByIndex(index), mDecodeOptions);
-                try {
-                    mDecodedBitmapQueue.put(linkedBitmap1);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Log.e(TAG, "startWithFrameSrc 2, ex=" + e);
-                }
+                putDecodedBitmap(linkedBitmap1);
 
-                Log.e(TAG, "start draw.");
+                Log.e(TAG, "startWithFrameSrc, start draw.");
                 // 开始播放动画
                 setStatus(FrameViewStatus.START);
                 startDrawThread();
@@ -344,16 +330,6 @@ public class FrameTextureView extends TextureView {
         mDrawHandler.post(new DrawRunnable());
     }
 
-    /**
-     * 重置数据
-     */
-    public void resetDataForChangeSrc() {
-        releaseHandler();
-        resetBitmapQueue();
-        releaseThread();
-        mDecodeOptions.inBitmap = null;
-    }
-
     private void resetBitmapQueue() {
         try {
             mDecodedBitmapQueue.resetData();
@@ -372,11 +348,13 @@ public class FrameTextureView extends TextureView {
      * 彻底销毁并释放资源
      */
     public void destroy() {
-        Log.i(TAG, "destroy FrameTextureView.");
+        Log.e(TAG, "destroy FrameTextureView, start.");
         setStatus(FrameViewStatus.DESTROY);
         releaseHandler();
         releaseBitmapQueue();
         releaseThread();
+        mDecodeOptions.inBitmap = null;
+        Log.e(TAG, "destroy FrameTextureView, end.");
     }
 
     private void releaseHandler() {
@@ -421,83 +399,13 @@ public class FrameTextureView extends TextureView {
         mScaleType = scaleType;
     }
 
-    public void setFrameInterval(int interval) {
-        mFrameInterval.set(interval);
-    }
-
-    /**
-     * 根据ScaleType配置绘制bitmap的Matrix
-     * <p>
-     * 参考ImageView的配置规则
-     */
-    private void configureDrawMatrix(Bitmap bitmap) {
-        int srcWidth = bitmap.getWidth();
-        int dstWidth = getWidth();
-        int srcHeight = bitmap.getHeight();
-        int dstHeight = getHeight();
-        boolean nothingChanged = ((mLastScaleType == mScaleType)
-                && (mLastSrcWidth == srcWidth)
-                && (mLastDstWidth == dstWidth)
-                && (mLastSrcHeight == srcHeight)
-                && (mLastDstHeight == dstHeight));
-        if (nothingChanged) {
-            return;
-        }
-        mLastSrcWidth = srcWidth;
-        mLastDstWidth = dstWidth;
-        mLastSrcHeight = srcHeight;
-        mLastDstHeight = dstHeight;
-        mLastScaleType = mScaleType;
-        switch (mScaleType) {
-            case FrameScaleType.MATRIX: {
-                return;
-            }
-            case FrameScaleType.CENTER: {
-                mDrawMatrix.setTranslate(Math.round((dstWidth - srcWidth) * 0.5f), Math.round((dstHeight - srcHeight) * 0.5f));
-                break;
-            }
-            case FrameScaleType.CENTER_CROP: {
-                float scale;
-                float dx = 0f;
-                float dy = 0f;
-                //按照高缩放
-                if (dstHeight * srcWidth > dstWidth * srcHeight) {
-                    scale = (float) dstHeight / (float) srcHeight;
-                    dx = (dstWidth - srcWidth * scale) * 0.5f;
-                } else {
-                    scale = (float) dstWidth / (float) srcWidth;
-                    dy = (dstHeight - srcHeight * scale) * 0.5f;
-                }
-                mDrawMatrix.setScale(scale, scale);
-                mDrawMatrix.postTranslate(dx, dy);
-                break;
-            }
-            case FrameScaleType.CENTER_INSIDE: {
-                float scale;
-                //小于dst时不缩放
-                if (srcWidth <= dstWidth && srcHeight <= dstHeight) {
-                    scale = 1.0f;
-                } else {
-                    scale = Math.min((float) dstWidth / (float) srcWidth, (float) dstHeight / (float) srcHeight);
-                }
-                float dx = Math.round((dstWidth - srcWidth * scale) * 0.5f);
-                float dy = Math.round((dstHeight - srcHeight * scale) * 0.5f);
-                mDrawMatrix.setScale(scale, scale);
-                mDrawMatrix.postTranslate(dx, dy);
-                break;
-            }
-            default: {
-                RectF srcRect = new RectF(0f, 0f, bitmap.getWidth(), bitmap.getHeight());
-                RectF dstRect = new RectF(0f, 0f, getWidth(), getHeight());
-                mDrawMatrix.setRectToRect(srcRect, dstRect, MATRIX_SCALE_ARRAY.get(mScaleType - 1));
-            }
-        }
-    }
-
     /**
      * 绘制
      */
     private void onFrameDraw(Canvas canvas) {
+        if (mStatus.get() != FrameViewStatus.START) {
+            return;
+        }
         if (isLastFrame()) {
             boolean isOneShot = mFrameList.isOneShot();
             Log.e(TAG, "onFrameDraw, is last frame, isOneShot=" + isOneShot);
@@ -517,32 +425,52 @@ public class FrameTextureView extends TextureView {
      * 绘制一帧
      */
     private void drawOneFrame(Canvas canvas) {
-        Log.e(TAG, "draw on frame start.");
+        if (mStatus.get() != FrameViewStatus.START) {
+            return;
+        }
+        Log.e(TAG, "draw on frame start, thread id=" + Thread.currentThread().getId());
         LinkedBitmap linkedBitmap = getDecodedBitmap();
         if (linkedBitmap != null && linkedBitmap.bitmap != null) {
             clearCanvas(canvas);
-            configureDrawMatrix(linkedBitmap.bitmap);
+            MatrixUtil.configureDrawMatrix(linkedBitmap.bitmap, getWidth(), getHeight(), mDrawMatrix, mScaleType);
             canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
             canvas.drawBitmap(linkedBitmap.bitmap, mDrawMatrix, null);
             putDrawnBitmap(linkedBitmap);
         }
-        Log.e(TAG, "draw on frame end.");
+        Log.e(TAG, "draw on frame end, thread id=" + Thread.currentThread().getId());
 
         mIndexDrawing.incrementAndGet();
     }
 
     /**
-     * 存储已绘制的bitmap到“已绘制的Bitmap队列”
+     * 存储已绘制的bitmap到『已绘制的Bitmap队列』
      *
      * @param bitmap 已绘制的bitmap
      */
     private void putDrawnBitmap(LinkedBitmap bitmap) {
+        Log.e(TAG, "putDrawnBitmap, start.");
         try {
             mDrawnBitmapQueue.offer(bitmap);
         } catch (Exception ex) {
             ex.printStackTrace();
             Log.e(TAG, "putDrawnBitmap, ex=" + ex);
         }
+        Log.e(TAG, "putDrawnBitmap, end.");
+    }
+
+    /**
+     * 存储已经解码的bitmap到『已解码的bitmap队列』
+     * @param bitmap 已解码bitmap
+     */
+    private void putDecodedBitmap(LinkedBitmap bitmap) {
+        Log.e(TAG, "putDecodedBitmap, start.");
+        try {
+            mDecodedBitmapQueue.put(bitmap);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Log.e(TAG, "putDecodedBitmap, ex=" + ex);
+        }
+        Log.e(TAG, "putDecodedBitmap, end.");
     }
 
     /**
@@ -597,27 +525,33 @@ public class FrameTextureView extends TextureView {
         Bitmap bitmap = null;
         long t0 = System.currentTimeMillis();
         if (mUseCache) {
-            bitmap = BlobCacheUtil.getCacheBitmapByName(mBlobCache, name, options);
+            try {
+                bitmap = BlobCacheUtil.getCacheBitmapByName(mBlobCache, name, options.inBitmap);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                Log.e(TAG, "decodeBitmap, from cache, ex=" + ex + ", name=" + name);
+            } finally {
+                t0 = System.currentTimeMillis() - t0;
+            }
+
             if (bitmap == null) {
                 Log.e(TAG, "get bitmap from cache, bitmap is null, name=" + name);
+            } else {
+                Log.e(TAG, "get bitmap from cache, name=" + name + ", cost time=" + t0 + ", name=" + name);
+                return bitmap;
             }
         }
 
-        long t1 = System.currentTimeMillis();
-        t0 = t1 - t0;
+        t0 = System.currentTimeMillis();
         try {
-            if (bitmap == null) {
-                bitmap = ResourceUtil.getBitmap(name, options);
-            }
+            bitmap = ResourceUtil.getBitmap(name, options);
         } catch (Exception ex) {
             ex.printStackTrace();
-            Log.e(TAG, "decode, ex: " + ex + ", name=" + name);
+            Log.e(TAG, "decodeBitmap, ex: " + ex + ", name=" + name);
         } finally {
-            t1 = System.currentTimeMillis() - t1;
+            t0 = System.currentTimeMillis() - t0;
         }
-        String bitmapSize = bitmap == null ? "0B" : CommonUtil.convertUnit(bitmap.getByteCount());
-        Log.e(TAG, "decode bitmap, name: " + name + ", bitmap size: " + bitmapSize
-                + ", BlobCache: " + t0 + ", Stream: " + t1);
+        Log.e(TAG, "decode bitmap from Stream, cost time=" + t0 + ", name=" + name);
         return bitmap;
     }
 
@@ -629,9 +563,7 @@ public class FrameTextureView extends TextureView {
             if (!mIsSurfaceAlive.get()) {
                 return;
             }
-            if (mStatus.get() == FrameViewStatus.DESTROY
-                    || mStatus.get() == FrameViewStatus.PAUSE
-                    || mStatus.get() == FrameViewStatus.END) {
+            if (mStatus.get() != FrameViewStatus.START) {
                 return;
             }
 
@@ -651,9 +583,16 @@ public class FrameTextureView extends TextureView {
                 }
             }
 
-            // TODO: 2019-05-08 stop the drawing thread
             if (mDrawHandler != null) {
-                mDrawHandler.postDelayed(this, mFrameInterval.get());
+                if (mFrameList == null) {
+                    return;
+                }
+                int duration = DEFAULT_DURATION;
+                FrameItem frameItem = mFrameList.getFrameItemByIndex(mIndexDrawing.get());
+                if (frameItem != null) {
+                    duration = frameItem.getDuration();
+                }
+                mDrawHandler.postDelayed(this, duration);
             }
         }
     }
@@ -663,9 +602,7 @@ public class FrameTextureView extends TextureView {
         @Override
         public void run() {
             Log.e(TAG, "decode runnable, status: " + mStatus.get());
-            if (mStatus.get() == FrameViewStatus.DESTROY
-                    || mStatus.get() == FrameViewStatus.PAUSE
-                    || mStatus.get() == FrameViewStatus.END) {
+            if (mStatus.get() != FrameViewStatus.START) {
                 Log.e(TAG, "DecodeRunnable, status is end or destroy.");
                 return;
             }
@@ -687,7 +624,9 @@ public class FrameTextureView extends TextureView {
                 return;
             }
 
+            Log.e(TAG, "DecodeRunnable, getDrawnBitmap start, size=" + mDrawnBitmapQueue.size());
             LinkedBitmap linkedBitmap = getDrawnBitmap();
+            Log.e(TAG, "DecodeRunnable, getDrawnBitmap end, thread id=" + Thread.currentThread().getId());
             if (linkedBitmap == null) {
                 linkedBitmap = new LinkedBitmap();
             }
@@ -697,13 +636,14 @@ public class FrameTextureView extends TextureView {
                 Log.e(TAG, "DecodeRunnable, bitmap is null.");
                 return;
             }
-            linkedBitmap.bitmap = bitmap;
-            try {
-                mDecodedBitmapQueue.put(linkedBitmap);
-            } catch (Exception e) {
-                e.printStackTrace();
-                Log.e(TAG, "DecodeRunnable, ex=" + e);
+
+            if (mStatus.get() != FrameViewStatus.START) {
+                Log.e(TAG, "DecodeRunnable, status is end or destroy 222, size=" + mDecodedBitmapQueue.size());
+                return;
             }
+
+            linkedBitmap.bitmap = bitmap;
+            putDecodedBitmap(linkedBitmap);
 
             if (mDecodeHandler != null) {
                 mDecodeHandler.post(this);

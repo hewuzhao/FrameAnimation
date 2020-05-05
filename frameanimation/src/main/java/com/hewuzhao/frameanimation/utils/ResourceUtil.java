@@ -3,10 +3,8 @@ package com.hewuzhao.frameanimation.utils;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.text.TextUtils;
 
 import com.hewuzhao.frameanimation.FrameApplication;
-import com.hewuzhao.frameanimation.frameview.FrameImage;
 
 /**
  * @author hewuzhao

@@ -30,6 +30,7 @@ import java.util.List;
  * @date 2020/4/19
  */
 public class FrameParseUtil {
+    private static final String TAG = "FrameParseUtil";
 
     /**
      * 帧动画文件解析
@@ -57,12 +58,12 @@ public class FrameParseUtil {
             while (event != XmlPullParser.END_DOCUMENT) {
                 switch (event) {
                     case XmlPullParser.START_DOCUMENT: {
-                        Log.i("fuck", "xml 解析开始.");
+                        Log.i(TAG, "xml 解析开始.");
                         break;
                     }
                     case XmlPullParser.START_TAG: {
                         String name = parser.getName();
-                        Log.e("fuck", "start tag, name = " + name);
+                        Log.e(TAG, "start tag, name = " + name);
                         if ("animation-list".equals(name)) {
                             Class styleClass = Class.forName("com.android.internal.R$styleable");
                             Field field = styleClass.getDeclaredField("AnimationDrawable");
@@ -82,7 +83,7 @@ public class FrameParseUtil {
                             frameList.setMaxBytes(maxBytes);
                             frameList.setMaxEntries(maxEntries);
                             frameList.setOneShot(oneShot);
-                            Log.e("fuck", "oneShot = " + oneShot + ", version=" + version
+                            Log.e(TAG, "oneShot = " + oneShot + ", version=" + version
                                     + ", maxEntries=" + maxEntries + ", maxBytes=" + maxBytes);
 
                         } else if ("item".equals(name)) {
@@ -109,7 +110,7 @@ public class FrameParseUtil {
                             frameItem.setDrawableName(drawable);
                             itemList.add(frameItem);
 
-                            Log.e("fuck", "duration=" + duration + ", drawable=" + drawable);
+                            Log.e(TAG, "duration=" + duration + ", drawable=" + drawable);
                         }
                         break;
                     }
@@ -118,7 +119,7 @@ public class FrameParseUtil {
                     }
                     case XmlPullParser.END_TAG: {
                         String name = parser.getName();
-                        Log.e("fuck", "end tag, name=" + name);
+                        Log.e(TAG, "end tag, name=" + name);
                         break;
                     }
                     default:
@@ -130,12 +131,12 @@ public class FrameParseUtil {
             frameList.setFrameItemList(itemList);
         } catch (Exception ex) {
             ex.printStackTrace();
-            Log.e("fuck", "ex=" + ex);
+            Log.e(TAG, "FrameParseUtil, ex=" + ex);
         }
         String[] str = file.split("/");
         file = str[str.length -1];
         file = file.split("\\.")[0];
-        Log.e("fuck", "fileName=" + file);
+        Log.e(TAG, "FrameParseUtil, fileName=" + file);
         frameList.setFileName(file);
         return frameList;
     }

@@ -2,9 +2,7 @@ package com.hewuzhao.frameanimation;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatSeekBar;
 import androidx.appcompat.widget.AppCompatSpinner;
-import androidx.appcompat.widget.SwitchCompat;
 
 import android.Manifest;
 import android.os.Bundle;
@@ -12,8 +10,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.hewuzhao.frameanimation.blobcache.BlobCacheManager;
@@ -32,12 +28,6 @@ import pub.devrel.easypermissions.EasyPermissions;
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
     private static final String TAG = "MainActivity";
 
-    private final List<String> REPEAT_MODE = Arrays.asList(
-            "INFINITE",
-            "ONCE",
-            "TWICE"
-    );
-
     private final List<String> SCALE_TYPE = Arrays.asList(
             "CENTER",
             "CENTER_INSIDE",
@@ -54,9 +44,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private Button mBigFrameBt;
     private Button mCurrentSelectedBt;
     private AppCompatSpinner mScaleType;
-    private AppCompatSeekBar mFrameInterval;
-    private SwitchCompat mBlobCacheSwitch;
-    private TextView mIntervalView;
 
     private boolean mIsInited = false;
 
@@ -108,8 +95,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             }
         });
 
-        mIntervalView = findViewById(R.id.interval_view);
-
         mScaleType = findViewById(R.id.scale_type);
         mScaleType.setAdapter(new ArrayAdapter(this, R.layout.spinner_item_view, SCALE_TYPE));
         mScaleType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -157,43 +142,6 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
 
-            }
-        });
-
-        mFrameInterval = findViewById(R.id.frame_interval);
-        mFrameInterval.setMax(300);
-        mFrameInterval.setProgress(80);
-        mIntervalView.setText("80ms");
-        mFrameInterval.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (progress <= 0) {
-                    progress = 1;
-                }
-
-                mIntervalView.setText(progress + "ms");
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                int progress = seekBar.getProgress();
-                if (progress <= 0) {
-                    progress = 1;
-                }
-                mFrameView.setFrameInterval(progress);
-            }
-        });
-
-        mBlobCacheSwitch = findViewById(R.id.blob_cache_switch);
-        mBlobCacheSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                mFrameView.setUseCache(isChecked);
             }
         });
 

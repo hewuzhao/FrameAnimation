@@ -26,7 +26,6 @@ public class BlobCacheManager {
     private static final String KEY_CACHE_UP_TO_DATE = "cache-up-to-date";
 
     private Map<String, BlobCache> mBlobCacheMap;
-    private Map<String, Boolean> mBlobCacheInitedMap;
     private boolean mOldCheckDoneMap = false;
 
     private BytesBufferPool mDataBufferPool;
@@ -34,7 +33,6 @@ public class BlobCacheManager {
 
     private BlobCacheManager() {
         mBlobCacheMap = new ConcurrentHashMap<>();
-        mBlobCacheInitedMap = new ConcurrentHashMap<>();
 
         mDataBufferPool = new BytesBufferPool(4, 5 * 1024 * 1024);
         mWidthAndHeightBufferPool = new BytesBufferPool(4, 4);
@@ -73,6 +71,7 @@ public class BlobCacheManager {
         }
         Context context = FrameApplication.sApplication;
         if (!mOldCheckDoneMap) {
+            // 安装APP之前的久数据，需要删除掉
             removeOldFilesIfNecessary(context);
             mOldCheckDoneMap = true;
         }
@@ -82,7 +81,7 @@ public class BlobCacheManager {
             if (cacheDir == null) {
                 return null;
             }
-            String path = cacheDir.getAbsolutePath() + "/" + filename;
+            String path = cacheDir.getAbsolutePath() + "/frameanimation/" + filename;
             try {
                 cache = new BlobCache(path, maxEntries, maxBytes, false, version);
                 mBlobCacheMap.put(filename, cache);
@@ -127,23 +126,29 @@ public class BlobCacheManager {
         if (cacheDir == null) {
             return;
         }
-        String prefix = cacheDir.getAbsolutePath() + "/";
 
-        BlobCache.deleteFiles(prefix + "imgcache");
-        BlobCache.deleteFiles(prefix + "rev_geocoding");
-        BlobCache.deleteFiles(prefix + "bookmark");
-    }
+        try {
+            String path = cacheDir.getAbsolutePath() + "/frameanimation";
+            File file = new File(path);
 
-    public void setBlobCacheInited(String fileName, boolean value) {
-        mBlobCacheInitedMap.put(fileName, value);
-    }
-
-    public boolean isBlobCacheInited(String fileName) {
-        if (TextUtils.isEmpty(fileName)) {
-            return false;
+            // 删除frameanimation下所有cache文件
+            deleteFile(file);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
-        Boolean value = mBlobCacheInitedMap.get(fileName);
-        return value == null ? false : value;
+    }
+
+    private void deleteFile(File file) {
+        if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    deleteFile(f);
+                }
+            }
+        } else if (file.exists()) {
+            file.delete();
+        }
     }
 
     public BytesBufferPool getBufferPool() {

@@ -47,7 +47,6 @@ public class LinkedBlockingQueue {
     private LinkedBitmap tail;
 
     private final AtomicBoolean destroy = new AtomicBoolean(false);
-    private final AtomicBoolean isStop = new AtomicBoolean(false);
 
 
     public LinkedBlockingQueue(int capacity) {
@@ -58,7 +57,7 @@ public class LinkedBlockingQueue {
     }
 
     public void put(LinkedBitmap bitmap) throws InterruptedException {
-        if (destroy.get() || isStop.get()) {
+        if (destroy.get()) {
             return;
         }
         if (bitmap == null) {
@@ -79,7 +78,7 @@ public class LinkedBlockingQueue {
              * signalled if it ever changes from capacity. Similarly
              * for all other uses of count in other wait guards.
              */
-            while (count.get() == capacity && !destroy.get() && !isStop.get()) {
+            while (count.get() == capacity && !destroy.get()) {
                 notFull.await();
             }
             enqueue(bitmap);
@@ -96,7 +95,7 @@ public class LinkedBlockingQueue {
     }
 
     public boolean offer(LinkedBitmap bitmap) {
-        if (destroy.get() || isStop.get()) {
+        if (destroy.get()) {
             return false;
         }
         if (bitmap == null) {
@@ -127,13 +126,16 @@ public class LinkedBlockingQueue {
     }
 
     public LinkedBitmap take() throws InterruptedException {
+        if (destroy.get()) {
+            return null;
+        }
         LinkedBitmap x;
         int c = -1;
         final AtomicInteger count = this.count;
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lockInterruptibly();
         try {
-            while (count.get() == 0 && !destroy.get() && !isStop.get()) {
+            while (count.get() == 0 && !destroy.get()) {
                 notEmpty.await();
             }
             x = dequeue();
@@ -148,6 +150,10 @@ public class LinkedBlockingQueue {
             signalNotFull();
         }
         return x;
+    }
+
+    public int size() {
+        return count.get();
     }
 
     /**
@@ -238,9 +244,7 @@ public class LinkedBlockingQueue {
     }
 
     public void resetData() {
-        isStop.set(true);
-        clear();
-        isStop.set(false);
+        destroy();
         destroy.set(false);
     }
 

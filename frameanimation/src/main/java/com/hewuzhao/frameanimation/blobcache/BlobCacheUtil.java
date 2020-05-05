@@ -52,7 +52,7 @@ public class BlobCacheUtil {
         return result;
     }
 
-    public static Bitmap getCacheBitmapByName(BlobCache blobCache, String name, BitmapFactory.Options options) {
+    public static Bitmap getCacheBitmapByName(BlobCache blobCache, String name, Bitmap inBitmap) {
 
         BytesBufferPool.BytesBuffer bytesBuffer = BlobCacheManager.getInstance().getBufferPool().get();
         try {
@@ -80,10 +80,8 @@ public class BlobCacheUtil {
                     BlobCacheManager.getInstance().getWidthAndHeightBufferPool().recycle(heightBuffer);
 
                     Bitmap bitmap = null;
-                    if (options != null && options.inBitmap != null
-                            && options.inBitmap.getWidth() == width
-                            && options.inBitmap.getHeight() == height) {
-                        bitmap = options.inBitmap;
+                    if (inBitmap != null && inBitmap.getWidth() == width && inBitmap.getHeight() == height) {
+                        bitmap = inBitmap;
                     }
                     if (bitmap == null) {
                         Log.e(TAG, "option inBitmap is null or width and height not fit, name: "
@@ -124,8 +122,8 @@ public class BlobCacheUtil {
                 Log.e(TAG, "save image to blob cache, bitmap is null, name: " + drawableName);
                 return;
             }
-            final int width = options.outWidth;
-            final int height = options.outHeight;
+            final int width = bitmap.getWidth();
+            final int height = bitmap.getHeight();
 
             byte[] key = BlobCacheUtil.getBytes(drawableName);
             ByteBuffer bu = ByteBuffer.allocate(bitmap.getByteCount());

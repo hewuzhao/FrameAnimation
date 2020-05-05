@@ -20,44 +20,20 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:layout_constraintBottom_toTopOf="@id/frame_interval"
+            app:layout_constraintBottom_toTopOf="@id/scale_type"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_chainStyle="spread_inside" />
 
-        <androidx.appcompat.widget.AppCompatSeekBar
-            android:id="@+id/frame_interval"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toTopOf="@id/scale_type"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/interval_view" />
-
         <androidx.appcompat.widget.AppCompatSpinner
             android:id="@+id/scale_type"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            app:layout_constraintBottom_toTopOf="@id/blob_cache_switch"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/frame_interval" />
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/blob_cache_switch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:checked="true"
-            android:text="使用缓存"
-            android:textColor="#474545"
-            android:textOff="关"
-            android:textOn="开"
             app:layout_constraintBottom_toTopOf="@id/small_frame_texture_view"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/scale_type"
-            app:showText="true" />
+            app:layout_constraintTop_toBottomOf="@id/interval_view" />
 
         <Button
             android:id="@+id/small_frame_texture_view"
@@ -68,7 +44,7 @@
             app:layout_constraintBottom_toTopOf="@id/big_frame_texture_view"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/blob_cache_switch" />
+            app:layout_constraintTop_toBottomOf="@id/scale_type" />
 
         <Button
             android:id="@+id/big_frame_texture_view"
@@ -96,7 +72,7 @@
         android:id="@+id/frame_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:useCache="true"
+        app:useCache="false"
         app:src="@drawable/big_animation_drawable"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/frame_view_part"
