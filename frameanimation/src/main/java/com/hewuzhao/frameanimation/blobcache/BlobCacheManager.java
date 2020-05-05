@@ -81,7 +81,9 @@ public class BlobCacheManager {
             if (cacheDir == null) {
                 return null;
             }
-            String path = cacheDir.getAbsolutePath() + "/frameanimation/" + filename;
+            String path = cacheDir.getAbsolutePath() + "/frameanimation";
+            createPath(path);
+            path = path + "/" + filename;
             try {
                 cache = new BlobCache(path, maxEntries, maxBytes, false, version);
                 mBlobCacheMap.put(filename, cache);
@@ -90,6 +92,17 @@ public class BlobCacheManager {
             }
         }
         return cache;
+    }
+
+    private void createPath(String path) {
+        File file = new File(path);
+        if (!file.exists()) {
+            try {
+                file.mkdirs();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
     }
 
     public void closeBlobCache(String fileName) {
@@ -139,6 +152,9 @@ public class BlobCacheManager {
     }
 
     private void deleteFile(File file) {
+        if (file == null) {
+            return;
+        }
         if (file.isDirectory()) {
             File[] files = file.listFiles();
             if (files != null) {
