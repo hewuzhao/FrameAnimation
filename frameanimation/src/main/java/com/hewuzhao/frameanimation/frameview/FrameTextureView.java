@@ -148,15 +148,6 @@ public class FrameTextureView extends TextureView {
                             mFrameList.getMaxEntries(),
                             mFrameList.getMaxBytes(),
                             mFrameList.getVersion());
-
-                    List<FrameItem> list = mFrameList.getFrameItemList();
-                    if (!CommonUtil.isEmpty(list)) {
-                        for (FrameItem item : mFrameList.getFrameItemList()) {
-                            if (!BlobCacheUtil.checkCacheByName(item.getDrawableName(), mBlobCache)) {
-                                BlobCacheUtil.saveImageByBlobCache(item.getDrawableName(), mBlobCache);
-                            }
-                        }
-                    }
                 }
             });
         }
@@ -230,13 +221,6 @@ public class FrameTextureView extends TextureView {
                             mFrameList.getMaxEntries(),
                             mFrameList.getMaxBytes(),
                             mFrameList.getVersion());
-
-                    // 检查和缓存到BlobCache
-                    for (FrameItem item : list) {
-                        if (!BlobCacheUtil.checkCacheByName(item.getDrawableName(), mBlobCache)) {
-                            BlobCacheUtil.saveImageByBlobCache(item.getDrawableName(), mBlobCache);
-                        }
-                    }
                 }
 
                 // 纠正索引
@@ -545,6 +529,9 @@ public class FrameTextureView extends TextureView {
         t0 = System.currentTimeMillis();
         try {
             bitmap = ResourceUtil.getBitmap(name, options);
+            if (mUseCache) {
+                BlobCacheUtil.saveImageByBlobCache(bitmap, name, mBlobCache);
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
             Log.e(TAG, "decodeBitmap, ex: " + ex + ", name=" + name);

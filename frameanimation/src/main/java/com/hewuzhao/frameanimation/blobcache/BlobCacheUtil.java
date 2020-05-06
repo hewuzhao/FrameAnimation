@@ -114,14 +114,25 @@ public class BlobCacheUtil {
     }
 
     public static void saveImageByBlobCache(String drawableName, BlobCache blobCache) {
+        saveImageByBlobCache(null, drawableName, blobCache);
+    }
+
+    public static void saveImageByBlobCache(Bitmap bitmap, String drawableName, BlobCache blobCache) {
+        if (blobCache == null) {
+            Log.e(TAG, "saveImageByBlobCache, blob cache is null.");
+            return;
+        }
         long t1 = System.currentTimeMillis();
-        try {
+        if (bitmap == null) {
             BitmapFactory.Options options = new BitmapFactory.Options();
-            Bitmap bitmap = ResourceUtil.getBitmap(drawableName, options);
+            bitmap = ResourceUtil.getBitmap(drawableName, options);
             if (bitmap == null) {
                 Log.e(TAG, "save image to blob cache, bitmap is null, name: " + drawableName);
                 return;
             }
+        }
+
+        try {
             final int width = bitmap.getWidth();
             final int height = bitmap.getHeight();
 
