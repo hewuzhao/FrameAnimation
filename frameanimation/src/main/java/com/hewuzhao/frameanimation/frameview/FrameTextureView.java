@@ -1,6 +1,7 @@
 package com.hewuzhao.frameanimation.frameview;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -16,6 +17,10 @@ import android.util.Log;
 import android.view.TextureView;
 
 import androidx.annotation.DrawableRes;
+import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
+import androidx.lifecycle.OnLifecycleEvent;
 
 import com.hewuzhao.frameanimation.R;
 import com.hewuzhao.frameanimation.blobcache.BlobCache;
@@ -27,8 +32,10 @@ import com.hewuzhao.frameanimation.utils.MatrixUtil;
 import com.hewuzhao.frameanimation.utils.ResourceUtil;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author hewuzhao
@@ -83,12 +90,12 @@ public class FrameTextureView extends TextureView {
     /**
      * 已解码Bitmap存储队列
      */
-    private final LinkedBlockingQueue mDecodedBitmapQueue = new LinkedBlockingQueue(BUFFER_SIZE);
+    private final CustomLinkedBlockingQueue mDecodedBitmapQueue = new CustomLinkedBlockingQueue(BUFFER_SIZE);
 
     /**
      * 已绘制的Bitmap队列
      */
-    private final LinkedBlockingQueue mDrawnBitmapQueue = new LinkedBlockingQueue(BUFFER_SIZE);
+    private final CustomLinkedBlockingQueue mDrawnBitmapQueue = new CustomLinkedBlockingQueue(BUFFER_SIZE);
 
     /**
      * bitmap解码线程
@@ -116,6 +123,31 @@ public class FrameTextureView extends TextureView {
     private final BitmapFactory.Options mDecodeOptions = new BitmapFactory.Options();
 
     protected Matrix mDrawMatrix;
+
+    /**
+     * 开启动画时，可能surface还没创建好，需要在surface创建好后去开启动画
+     */
+    private boolean mNeedToStartDrawThread;
+
+    /**
+     * 在activity的OnPause生命周期时，动画是否在执行中
+     */
+    private final AtomicBoolean mIsAnimatingWhenOnPause = new AtomicBoolean(false);
+
+    /**
+     * 【绘制锁】绘制图片 跟 销毁texture surface 这个两个操作需要互斥
+     */
+    private final ReentrantLock mDrawingLock = new ReentrantLock();
+
+    /**
+     * 【解码锁】解码图片 跟 回收所有图片 这两个操作需要互斥
+     */
+    private final ReentrantLock mDecodingLock = new ReentrantLock();
+
+    /**
+     * 当前在绘制的帧动画资源id
+     */
+    private int mCurrentResId = -1;
 
     public FrameTextureView(Context context) {
         super(context);
@@ -161,8 +193,12 @@ public class FrameTextureView extends TextureView {
         setSurfaceTextureListener(new SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-                Log.d(TAG, "surface created.");
+                Log.i(TAG, "surface created.");
                 mIsSurfaceAlive.set(true);
+                if (mNeedToStartDrawThread) {
+                    mNeedToStartDrawThread = false;
+                    startDrawThread();
+                }
             }
 
             @Override
@@ -174,9 +210,22 @@ public class FrameTextureView extends TextureView {
             public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
                 Log.e(TAG, "surface destroy.");
                 mIsSurfaceAlive.set(false);
-                surface.release();
+
+                // 尝试获取【绘制锁】，防止正在绘制中，surface销毁导致崩溃(超时50毫秒，防止阻塞主线程)
+                try {
+                    mDrawingLock.tryLock(50, TimeUnit.MILLISECONDS);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                } finally {
+                    try {
+                        mDrawingLock.unlock();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+
                 destroy();
-                return false;
+                return true;
             }
 
             @Override
@@ -184,6 +233,69 @@ public class FrameTextureView extends TextureView {
 
             }
         });
+
+        final Lifecycle lifecycle = getLifecycle(context);
+        if (lifecycle == null) {
+            Log.e(TAG, "FrameTextureView, get lifecycle is null.");
+        } else {
+            lifecycle.addObserver(new LifecycleObserver() {
+
+                @OnLifecycleEvent(Lifecycle.Event.ON_CREATE)
+                public void onCreate() {
+
+                }
+
+                @OnLifecycleEvent(Lifecycle.Event.ON_START)
+                public void onStart() {
+
+                }
+
+                @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+                public void onResume() {
+                    Log.i(TAG, "lifecycle, onResume.");
+                    if (mIsAnimatingWhenOnPause.get() && !isDestroy()) {
+                        resume();
+                    }
+                    mIsAnimatingWhenOnPause.set(false);
+                }
+
+                @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+                public void onPause() {
+                    Log.i(TAG, "lifecycle, onPause.");
+                    if (isStart()) {
+                        mIsAnimatingWhenOnPause.set(true);
+                        pause();
+                    }
+                }
+
+                @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+                public void onStop() {
+
+                }
+
+                @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+                public void onDestroy() {
+                    Log.i(TAG, "lifecycle, onDestroy.");
+                    destroy();
+                    lifecycle.removeObserver(this);
+                }
+            });
+        }
+
+    }
+
+    private Lifecycle getLifecycle(Context context) {
+        if (context instanceof FragmentActivity) {
+            return ((FragmentActivity) context).getLifecycle();
+        } else {
+            while (context instanceof ContextWrapper) {
+                if (context instanceof FragmentActivity) {
+                    return ((FragmentActivity) context).getLifecycle();
+                }
+                context = ((ContextWrapper) context).getBaseContext();
+            }
+        }
+        return null;
     }
 
     private void setStatus(@FrameViewStatus int status) {
@@ -195,20 +307,36 @@ public class FrameTextureView extends TextureView {
      *
      * @param resId 资源id
      */
-    public void startWithFrameSrc(final @DrawableRes int resId) {
-        Log.e(TAG, "startWithFrameSrc, resId=" + resId);
+    public void startWithFrameSrc(@DrawableRes int resId) {
+        Log.e(TAG, "startWithFrameSrc, resId=" + resId
+                + ", mCurrentResId=" + mCurrentResId + ", status=" + mStatus);
+        if (isDestroy()) {
+            return;
+        }
+        if (resId == mCurrentResId) {
+            if (isPause()) {
+                setStatus(FrameViewStatus.START);
+                startDrawThread();
+                startDecodeThread(new DecodeRunnable());
+            }
+            return;
+        }
+        mCurrentResId = resId;
         // 初始化状态
         setStatus(FrameViewStatus.IDLE);
-        // 重置资源
-        releaseBitmapQueue();
-        mDecodeOptions.inBitmap = null;
+        // 释放之前的资源
+        destroyBitmapQueue();
 
         // 解码新的资源列表数据
         startDecodeThread(new Runnable() {
             @Override
             public void run() {
+                if (isDestroy()) {
+                    Log.e(TAG, "startWithFrameSrc, 111 is destroy, return.");
+                    return;
+                }
                 // 解析动画列表数据
-                mFrameList = FrameParseUtil.parse(resId);
+                mFrameList = FrameParseUtil.parse(mCurrentResId);
                 List<FrameItem> list = mFrameList.getFrameItemList();
                 if (CommonUtil.isEmpty(list)) {
                     Log.e(TAG, "startWithFrameSrc, frame list parse error, list is empty.");
@@ -229,54 +357,76 @@ public class FrameTextureView extends TextureView {
 
                 // 重置队列
                 resetBitmapQueue();
+                if (isDestroy()) {
+                    Log.e(TAG, "startWithFrameSrc, 222 is destroy, return.");
+                    return;
+                }
 
                 // 预解码两个bitmap到解码队列
                 int index = mIndexDecoding.getAndIncrement();
                 LinkedBitmap linkedBitmap = new LinkedBitmap();
-                linkedBitmap.bitmap = decodeBitmap(mFrameList.getFrameItemByIndex(index), mDecodeOptions);
+                linkedBitmap.bitmap = decodeBitmap(mFrameList.getFrameItemByIndex(index));
                 putDecodedBitmap(linkedBitmap);
 
                 index = mIndexDecoding.getAndIncrement();
                 LinkedBitmap linkedBitmap1 = new LinkedBitmap();
-                linkedBitmap1.bitmap = decodeBitmap(mFrameList.getFrameItemByIndex(index), mDecodeOptions);
+                linkedBitmap1.bitmap = decodeBitmap(mFrameList.getFrameItemByIndex(index));
                 putDecodedBitmap(linkedBitmap1);
 
-                Log.e(TAG, "startWithFrameSrc, start draw.");
+                if (isDestroy()) {
+                    Log.e(TAG, "startWithFrameSrc, 333 is destroy, return.");
+                    return;
+                }
+
+                Log.e(TAG, "startWithFrameSrc, start draw, resId=" + mCurrentResId);
+                if (mDecodeHandler == null) {
+                    Log.e(TAG, "startWithFrameSrc, decode handler is null, may be is destroy.");
+                    return;
+                }
                 // 开始播放动画
                 setStatus(FrameViewStatus.START);
-                startDrawThread();
                 mDecodeHandler.post(new DecodeRunnable());
+                if (mIsSurfaceAlive.get()) {
+                    startDrawThread();
+                } else {
+                    Log.i(TAG, "startWithFrameSrc, surface is not alive, resId=" + mCurrentResId);
+                    mNeedToStartDrawThread = true;
+                }
             }
         });
-    }
-
-    /**
-     * 开始帧动画
-     */
-    public void start() {
-        Log.i(TAG, "start frame textureview, status: " + mStatus.get());
-        if (mStatus.get() == FrameViewStatus.START || mStatus.get() == FrameViewStatus.DESTROY) {
-            return;
-        }
-        if (mStatus.get() != FrameViewStatus.PAUSE) {
-            mIndexDecoding.set(0);
-            mIndexDrawing.set(0);
-        }
-        setStatus(FrameViewStatus.START);
-        startDrawThread();
-        startDecodeThread(new DecodeRunnable());
     }
 
     public boolean isPause() {
         return mStatus.get() == FrameViewStatus.PAUSE;
     }
 
+    public boolean isDestroy() {
+        return mStatus.get() == FrameViewStatus.DESTROY;
+    }
+
+    public boolean isStart() {
+        return mStatus.get() == FrameViewStatus.START;
+    }
+
     /**
      * 暂停动画，停留在当前一帧
      */
     public void pause() {
-        Log.e(TAG, "stop.");
+        Log.i(TAG, "stop, status=" + mStatus);
+        if (isDestroy()) {
+            return;
+        }
         setStatus(FrameViewStatus.PAUSE);
+    }
+
+    public void resume() {
+        Log.i(TAG, "resume, status=" + mStatus);
+        if (isDestroy()) {
+            return;
+        }
+
+        setStatus(FrameViewStatus.START);
+        startDrawThread();
     }
 
     /**
@@ -300,6 +450,10 @@ public class FrameTextureView extends TextureView {
      * 开启绘制线程
      */
     private void startDrawThread() {
+        Log.i(TAG, "startDrawThread, resId=" + mCurrentResId + ", status=" + mStatus);
+        if (isDestroy()) {
+            return;
+        }
         if (mDrawHandlerThread == null) {
             mDrawHandlerThread = new HandlerThread(DRAW_THREAD_NAME);
         }
@@ -316,15 +470,55 @@ public class FrameTextureView extends TextureView {
 
     private void resetBitmapQueue() {
         try {
-            mDecodedBitmapQueue.resetData();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+            // 尝试获取【解码锁】，避免正在解码时回收了mDecodeOptions中的inBitmap，进而导致崩溃(超时50毫秒，防止阻塞主线程)
+            mDecodingLock.tryLock(50, TimeUnit.MILLISECONDS);
+            try {
+                mDecodedBitmapQueue.resetData();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
 
-        try {
-            mDrawnBitmapQueue.resetData();
+            try {
+                mDrawnBitmapQueue.resetData();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            mDecodeOptions.inBitmap = null;
         } catch (Exception ex) {
             ex.printStackTrace();
+        } finally {
+            try {
+                mDecodingLock.unlock();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    private void destroyBitmapQueue() {
+        try {
+            // 尝试获取【解码锁】，避免正在解码时回收了mDecodeOptions中的inBitmap，进而导致崩溃(超时50毫秒，防止阻塞主线程)
+            mDecodingLock.tryLock(50, TimeUnit.MILLISECONDS);
+            try {
+                mDecodedBitmapQueue.destroy();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            try {
+                mDrawnBitmapQueue.destroy();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            mDecodeOptions.inBitmap = null;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            try {
+                mDecodingLock.unlock();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -332,16 +526,19 @@ public class FrameTextureView extends TextureView {
      * 彻底销毁并释放资源
      */
     public void destroy() {
+        if (isDestroy()) {
+            return;
+        }
         Log.e(TAG, "destroy FrameTextureView, start.");
         setStatus(FrameViewStatus.DESTROY);
-        releaseHandler();
-        releaseBitmapQueue();
-        releaseThread();
+        destroyHandler();
+        destroyBitmapQueue();
+        destroyThread();
         mDecodeOptions.inBitmap = null;
         Log.e(TAG, "destroy FrameTextureView, end.");
     }
 
-    private void releaseHandler() {
+    private void destroyHandler() {
         if (mDecodeHandler != null) {
             mDecodeHandler.removeCallbacksAndMessages(null);
             mDecodeHandler = null;
@@ -353,29 +550,23 @@ public class FrameTextureView extends TextureView {
         }
     }
 
-    private void releaseBitmapQueue() {
+    private void destroyThread() {
         try {
-            mDecodedBitmapQueue.destroy();
+            if (mDecodeHandlerThread != null) {
+                mDecodeHandlerThread.quit();
+                mDecodeHandlerThread = null;
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
 
         try {
-            mDrawnBitmapQueue.destroy();
+            if (mDrawHandlerThread != null) {
+                mDrawHandlerThread.quit();
+                mDrawHandlerThread = null;
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
-        }
-    }
-
-    private void releaseThread() {
-        if (mDecodeHandlerThread != null) {
-            mDecodeHandlerThread.quit();
-            mDecodeHandlerThread = null;
-        }
-
-        if (mDrawHandlerThread != null) {
-            mDrawHandlerThread.quit();
-            mDrawHandlerThread = null;
         }
     }
 
@@ -384,77 +575,96 @@ public class FrameTextureView extends TextureView {
     }
 
     /**
-     * 绘制
-     */
-    private void onFrameDraw(Canvas canvas) {
-        if (mStatus.get() != FrameViewStatus.START) {
-            return;
-        }
-        if (isLastFrame()) {
-            boolean isOneShot = mFrameList.isOneShot();
-            Log.e(TAG, "onFrameDraw, is last frame, isOneShot=" + isOneShot);
-            if (isOneShot) {
-                setStatus(FrameViewStatus.END);
-            } else {
-                mIndexDrawing.set(0);
-                mIndexDecoding.set(0);
-                drawOneFrame(canvas);
-            }
-        } else {
-            drawOneFrame(canvas);
-        }
-    }
-
-    /**
      * 绘制一帧
      */
-    private void drawOneFrame(Canvas canvas) {
-        if (mStatus.get() != FrameViewStatus.START) {
+    private void drawOneFrame() {
+        if (!mIsSurfaceAlive.get()) {
+            Log.e(TAG, "drawOneFrame, suface is not alive.");
             return;
         }
-        Log.e(TAG, "draw on frame start, thread id=" + Thread.currentThread().getId());
+        if (!isStart()) {
+            Log.e(TAG, "drawOneFrame, status is not start, status=" + mStatus);
+            return;
+        }
         LinkedBitmap linkedBitmap = getDecodedBitmap();
         if (linkedBitmap != null && linkedBitmap.bitmap != null) {
-            clearCanvas(canvas);
-            MatrixUtil.configureDrawMatrix(linkedBitmap.bitmap, getWidth(), getHeight(), mDrawMatrix, mScaleType);
-            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-            canvas.drawBitmap(linkedBitmap.bitmap, mDrawMatrix, null);
+            if (!isStart()) {
+                // 如果是暂停状态，则取出来后，要添加到已绘制的队列里，避免恢复动画时【绘制队列】和【解码队列】都为空的情况
+                if (isPause()) {
+                    putDrawnBitmap(linkedBitmap);
+                }
+                return;
+            }
+            if (!mIsSurfaceAlive.get()) {
+                return;
+            }
+            Bitmap bitmap = linkedBitmap.bitmap;
+            MatrixUtil.configureDrawMatrix(bitmap, getWidth(), getHeight(), mDrawMatrix, mScaleType);
+            Canvas canvas = null;
+            try {
+                canvas = lockCanvas();
+                if (canvas != null) {
+                    // 获取【绘制锁】，防止绘制中，surface销毁了导致崩溃
+                    mDrawingLock.lock();
+                    try {
+                        if (mIsSurfaceAlive.get() && !bitmap.isRecycled()) {
+                            clearCanvas(canvas);
+                            canvas.drawBitmap(bitmap, mDrawMatrix, null);
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    } finally {
+                        mDrawingLock.unlock();
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            } finally {
+                try {
+                    if (canvas != null) {
+                        unlockCanvasAndPost(canvas);
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
             putDrawnBitmap(linkedBitmap);
         }
-        Log.e(TAG, "draw on frame end, thread id=" + Thread.currentThread().getId());
-
         mIndexDrawing.incrementAndGet();
     }
 
     /**
-     * 存储已绘制的bitmap到『已绘制的Bitmap队列』
+     * 存储已绘制的bitmap到【已绘制的Bitmap队列】
      *
-     * @param bitmap 已绘制的bitmap
+     * @param bitmap 已绘制的bitmap（不阻塞）
      */
     private void putDrawnBitmap(LinkedBitmap bitmap) {
-        Log.e(TAG, "putDrawnBitmap, start.");
+        if (isDestroy()) {
+            return;
+        }
         try {
             mDrawnBitmapQueue.offer(bitmap);
         } catch (Exception ex) {
             ex.printStackTrace();
             Log.e(TAG, "putDrawnBitmap, ex=" + ex);
         }
-        Log.e(TAG, "putDrawnBitmap, end.");
     }
 
     /**
-     * 存储已经解码的bitmap到『已解码的bitmap队列』
-     * @param bitmap 已解码bitmap
+     * 存储已经解码的bitmap到【已解码的bitmap队列】
+     *
+     * @param bitmap 已解码bitmap（可能阻塞）
      */
     private void putDecodedBitmap(LinkedBitmap bitmap) {
-        Log.e(TAG, "putDecodedBitmap, start.");
+        if (isDestroy()) {
+            return;
+        }
         try {
             mDecodedBitmapQueue.put(bitmap);
         } catch (Exception ex) {
             ex.printStackTrace();
             Log.e(TAG, "putDecodedBitmap, ex=" + ex);
         }
-        Log.e(TAG, "putDecodedBitmap, end.");
     }
 
     /**
@@ -465,10 +675,13 @@ public class FrameTextureView extends TextureView {
     }
 
     /**
-     * 从解码bitmap队列里取bitmap
-     * 该方法可能会阻塞（新的bitmap可能还没准备好）
+     * 从【解码bitmap队列】里取bitmap
+     * （可能会阻塞）
      */
     private LinkedBitmap getDecodedBitmap() {
+        if (isDestroy()) {
+            return null;
+        }
         LinkedBitmap bitmap = null;
         try {
             bitmap = mDecodedBitmapQueue.take();
@@ -489,9 +702,12 @@ public class FrameTextureView extends TextureView {
     }
 
     /**
-     * 从“已绘制的bitmap队列”里取废弃的已绘制的bitmap
+     * 从【已绘制的bitmap队列】里取废弃的已绘制的bitmap
      */
     private LinkedBitmap getDrawnBitmap() {
+        if (isDestroy()) {
+            return null;
+        }
         LinkedBitmap bitmap = null;
         try {
             bitmap = mDrawnBitmapQueue.take();
@@ -504,41 +720,37 @@ public class FrameTextureView extends TextureView {
     /**
      * 解码图片
      */
-    private Bitmap decodeBitmap(FrameItem frameItem, BitmapFactory.Options options) {
+    private Bitmap decodeBitmap(FrameItem frameItem) {
         final String name = frameItem.getDrawableName();
         Bitmap bitmap = null;
-        long t0 = System.currentTimeMillis();
         if (mUseCache) {
             try {
-                bitmap = BlobCacheUtil.getCacheBitmapByName(mBlobCache, name, options.inBitmap);
+                bitmap = BlobCacheUtil.getCacheBitmapByName(mBlobCache, name, mDecodeOptions.inBitmap);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 Log.e(TAG, "decodeBitmap, from cache, ex=" + ex + ", name=" + name);
-            } finally {
-                t0 = System.currentTimeMillis() - t0;
             }
 
-            if (bitmap == null) {
-                Log.e(TAG, "get bitmap from cache, bitmap is null, name=" + name);
-            } else {
-                Log.e(TAG, "get bitmap from cache, name=" + name + ", cost time=" + t0 + ", name=" + name);
+            if (bitmap != null) {
                 return bitmap;
             }
         }
 
-        t0 = System.currentTimeMillis();
+        // 获取【解码锁】，避免在解码图片时已经处于destroy状态，导致mDecodeOptions中inBitmap被回收了而崩溃
+        mDecodingLock.lock();
         try {
-            bitmap = ResourceUtil.getBitmap(name, options);
-            if (mUseCache) {
-                BlobCacheUtil.saveImageByBlobCache(bitmap, name, mBlobCache);
+            if (!isDestroy()) {
+                bitmap = ResourceUtil.getBitmap(name, mDecodeOptions);
+                if (mUseCache) {
+                    BlobCacheUtil.saveImageByBlobCache(bitmap, name, mBlobCache);
+                }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
             Log.e(TAG, "decodeBitmap, ex: " + ex + ", name=" + name);
         } finally {
-            t0 = System.currentTimeMillis() - t0;
+            mDecodingLock.unlock();
         }
-        Log.e(TAG, "decode bitmap from Stream, cost time=" + t0 + ", name=" + name);
         return bitmap;
     }
 
@@ -546,32 +758,34 @@ public class FrameTextureView extends TextureView {
 
         @Override
         public void run() {
-            Log.e(TAG, "draw runnable, status: " + mStatus.get() + ", isAlive: " + mIsSurfaceAlive.get());
             if (!mIsSurfaceAlive.get()) {
+                Log.e(TAG, "DrawRunnable, surface is not alive.");
                 return;
             }
-            if (mStatus.get() != FrameViewStatus.START) {
+            if (!isStart()) {
+                Log.e(TAG, "DrawRunnable, status is not start, status=" + mStatus);
                 return;
             }
-
-            Canvas canvas = null;
-            try {
-                canvas = lockCanvas();
-                onFrameDraw(canvas);
-            } catch (Exception e) {
-                e.printStackTrace();
-                Log.e(TAG, "DrawRunnable 1, ex: " + e);
-            } finally {
-                try {
-                    unlockCanvasAndPost(canvas);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    Log.e(TAG, "DrawRunnable 2, ex: " + ex);
+            if (isLastFrame()) {
+                boolean isOneShot = mFrameList.isOneShot();
+                if (isOneShot) {
+                    setStatus(FrameViewStatus.END);
+                } else {
+                    drawOneFrame();
+                    mIndexDrawing.set(0);
                 }
+            } else {
+                drawOneFrame();
             }
 
             if (mDrawHandler != null) {
                 if (mFrameList == null) {
+                    return;
+                }
+                if (!isStart()) {
+                    return;
+                }
+                if (!mIsSurfaceAlive.get()) {
                     return;
                 }
                 int duration = DEFAULT_DURATION;
@@ -588,51 +802,50 @@ public class FrameTextureView extends TextureView {
 
         @Override
         public void run() {
-            Log.e(TAG, "decode runnable, status: " + mStatus.get());
-            if (mStatus.get() != FrameViewStatus.START) {
-                Log.e(TAG, "DecodeRunnable, status is end or destroy.");
+            if (isDestroy()) {
+                Log.e(TAG, "DecodeRunnable, is not start, status=" + mStatus);
                 return;
             }
-
             if (mFrameList == null) {
-                Log.e(TAG, "DecodeRunnable, mFrameList is null.");
+                Log.e(TAG, "DecodeRunnable, frame list is null.");
                 return;
             }
 
             int index = mIndexDecoding.getAndIncrement();
             if (index >= mFrameList.getFrameItemSize()) {
                 index = 0;
-                mIndexDecoding.set(0);
+                mIndexDecoding.set(1);
             }
-            Log.e(TAG, "DecodeRunnable, index=" + index);
+
             FrameItem frameItem = mFrameList.getFrameItemByIndex(index);
             if (frameItem == null) {
                 Log.e(TAG, "DecodeRunnable, index=" + index + ", frameItem is null.");
                 return;
             }
 
-            Log.e(TAG, "DecodeRunnable, getDrawnBitmap start, size=" + mDrawnBitmapQueue.size());
             LinkedBitmap linkedBitmap = getDrawnBitmap();
-            Log.e(TAG, "DecodeRunnable, getDrawnBitmap end, thread id=" + Thread.currentThread().getId());
+            if (isDestroy()) {
+                return;
+            }
             if (linkedBitmap == null) {
                 linkedBitmap = new LinkedBitmap();
             }
             mDecodeOptions.inBitmap = linkedBitmap.bitmap;
-            Bitmap bitmap = decodeBitmap(frameItem, mDecodeOptions);
+            Bitmap bitmap = decodeBitmap(frameItem);
+            if (isDestroy()) {
+                return;
+            }
             if (bitmap == null) {
                 Log.e(TAG, "DecodeRunnable, bitmap is null.");
-                return;
+            } else {
+                linkedBitmap.bitmap = bitmap;
+                putDecodedBitmap(linkedBitmap);
             }
-
-            if (mStatus.get() != FrameViewStatus.START) {
-                Log.e(TAG, "DecodeRunnable, status is end or destroy 222, size=" + mDecodedBitmapQueue.size());
-                return;
-            }
-
-            linkedBitmap.bitmap = bitmap;
-            putDecodedBitmap(linkedBitmap);
 
             if (mDecodeHandler != null) {
+                if (isDestroy()) {
+                    return;
+                }
                 mDecodeHandler.post(this);
             }
         }

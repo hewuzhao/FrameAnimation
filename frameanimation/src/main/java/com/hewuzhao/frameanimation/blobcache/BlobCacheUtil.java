@@ -80,7 +80,7 @@ public class BlobCacheUtil {
                     BlobCacheManager.getInstance().getWidthAndHeightBufferPool().recycle(heightBuffer);
 
                     Bitmap bitmap = null;
-                    if (inBitmap != null && inBitmap.getWidth() == width && inBitmap.getHeight() == height) {
+                    if (inBitmap != null && !inBitmap.isRecycled() && inBitmap.getWidth() == width && inBitmap.getHeight() == height) {
                         bitmap = inBitmap;
                     }
                     if (bitmap == null) {

@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             @Override
             public void onClick(View v) {
                 if (mFrameView.isPause()) {
-                    mFrameView.start();
+                    mFrameView.resume();
                     mBtStop.setText("停止");
                 } else {
                     pauseFrameViw();
@@ -186,7 +186,8 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     private void init() {
         mIsInited = true;
-//        startCheckImageCache();
+        // TODO test
+        mBigFrameBt.callOnClick();
     }
 
     private void startCheckImageCache() {

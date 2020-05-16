@@ -1,5 +1,8 @@
 package com.hewuzhao.frameanimation.frameview;
 
+import android.annotation.SuppressLint;
+import android.util.Log;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
@@ -9,7 +12,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author hewuzhao
  * @date 2020-02-01
  */
-public class LinkedBlockingQueue {
+public class CustomLinkedBlockingQueue {
+    private static final String TAG = "CustomLinkedBlockingQueue";
+
     /**
      * Current number of elements
      */
@@ -49,7 +54,7 @@ public class LinkedBlockingQueue {
     private final AtomicBoolean destroy = new AtomicBoolean(false);
 
 
-    public LinkedBlockingQueue(int capacity) {
+    public CustomLinkedBlockingQueue(int capacity) {
         if (capacity <= 0) {
             throw new IllegalArgumentException();
         }
@@ -162,6 +167,9 @@ public class LinkedBlockingQueue {
      * @param bitmap
      */
     private void enqueue(LinkedBitmap bitmap) {
+        if (destroy.get()) {
+            return;
+        }
         if (head == null) {
             head = bitmap;
             tail = bitmap;
@@ -178,6 +186,9 @@ public class LinkedBlockingQueue {
      * @return
      */
     private LinkedBitmap dequeue() {
+        if (destroy.get()) {
+            return null;
+        }
         LinkedBitmap p = head;
         if (p == null) {
             return null;
@@ -248,11 +259,15 @@ public class LinkedBlockingQueue {
         destroy.set(false);
     }
 
+    @SuppressLint("LongLogTag")
     private void clear() {
         fullyLock();
         try {
             signalAll();
             LinkedBitmap p = head;
+            if (p == null) {
+                p = tail;
+            }
             if (p == null) {
                 return;
             }
@@ -263,11 +278,13 @@ public class LinkedBlockingQueue {
                 }
                 p = p.next;
             }
+            head = tail = null;
             count.set(0);
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {
             fullyUnlock();
+            Log.i(TAG, "clean all bitmap, finished.");
         }
     }
 }
