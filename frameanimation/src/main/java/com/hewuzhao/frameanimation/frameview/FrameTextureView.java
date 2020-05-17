@@ -135,12 +135,12 @@ public class FrameTextureView extends TextureView {
     private final AtomicBoolean mIsAnimatingWhenOnPause = new AtomicBoolean(false);
 
     /**
-     * 【绘制锁】绘制图片 跟 销毁texture surface 这个两个操作需要互斥
+     * 【绘制锁】：[绘制图片]、[销毁texture surface]和[回收所有图片] 这个三个操作需要互斥
      */
     private final ReentrantLock mDrawingLock = new ReentrantLock();
 
     /**
-     * 【解码锁】解码图片 跟 回收所有图片 这两个操作需要互斥
+     * 【解码锁】[解码图片] 跟 [回收所有图片] 这两个操作需要互斥
      */
     private final ReentrantLock mDecodingLock = new ReentrantLock();
 
@@ -470,8 +470,10 @@ public class FrameTextureView extends TextureView {
 
     private void resetBitmapQueue() {
         try {
-            // 尝试获取【解码锁】，避免正在解码时回收了mDecodeOptions中的inBitmap，进而导致崩溃(超时50毫秒，防止阻塞主线程)
+            // 尝试获取【绘制锁】【解码锁】，避免正在解码时回收了mDecodeOptions中的inBitmap，进而导致崩溃
+            // (超时50毫秒，防止阻塞主线程)
             mDecodingLock.tryLock(50, TimeUnit.MILLISECONDS);
+            mDrawingLock.tryLock(50, TimeUnit.MILLISECONDS);
             try {
                 mDecodedBitmapQueue.resetData();
             } catch (Exception ex) {
@@ -492,13 +494,20 @@ public class FrameTextureView extends TextureView {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+            try {
+                mDrawingLock.unlock();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
     private void destroyBitmapQueue() {
         try {
-            // 尝试获取【解码锁】，避免正在解码时回收了mDecodeOptions中的inBitmap，进而导致崩溃(超时50毫秒，防止阻塞主线程)
+            // 尝试获取【绘制锁】【解码锁】，避免正在解码时回收了mDecodeOptions中的inBitmap，进而导致崩溃
+            // (超时50毫秒，防止阻塞主线程)
             mDecodingLock.tryLock(50, TimeUnit.MILLISECONDS);
+            mDrawingLock.tryLock(50, TimeUnit.MILLISECONDS);
             try {
                 mDecodedBitmapQueue.destroy();
             } catch (Exception ex) {
@@ -519,6 +528,11 @@ public class FrameTextureView extends TextureView {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+            try {
+                mDrawingLock.unlock();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -534,7 +548,6 @@ public class FrameTextureView extends TextureView {
         destroyHandler();
         destroyBitmapQueue();
         destroyThread();
-        mDecodeOptions.inBitmap = null;
         Log.e(TAG, "destroy FrameTextureView, end.");
     }
 

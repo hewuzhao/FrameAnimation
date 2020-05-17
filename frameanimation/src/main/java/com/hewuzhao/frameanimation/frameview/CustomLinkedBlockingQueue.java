@@ -272,10 +272,10 @@ public class CustomLinkedBlockingQueue {
                 return;
             }
             while (p != null) {
-                if (p.bitmap != null) {
+                if (p.bitmap != null && !p.bitmap.isRecycled()) {
                     p.bitmap.recycle();
-                    p.bitmap = null;
                 }
+                p.bitmap = null;
                 p = p.next;
             }
             head = tail = null;
