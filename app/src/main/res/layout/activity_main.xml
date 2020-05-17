@@ -72,7 +72,7 @@
         android:id="@+id/frame_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:useCache="false"
+        app:useCache="true"
         app:src="@drawable/big_animation_drawable"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/frame_view_part"

@@ -617,9 +617,9 @@ public class FrameTextureView extends TextureView {
             try {
                 canvas = lockCanvas();
                 if (canvas != null) {
-                    // 获取【绘制锁】，防止绘制中，surface销毁了导致崩溃
-                    mDrawingLock.lock();
                     try {
+                        // 获取【绘制锁】，防止绘制中，surface销毁了导致崩溃
+                        mDrawingLock.lockInterruptibly();
                         if (mIsSurfaceAlive.get() && !bitmap.isRecycled()) {
                             clearCanvas(canvas);
                             canvas.drawBitmap(bitmap, mDrawMatrix, null);
@@ -627,7 +627,13 @@ public class FrameTextureView extends TextureView {
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     } finally {
-                        mDrawingLock.unlock();
+                        try {
+
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        } finally {
+                            mDrawingLock.unlock();
+                        }
                     }
                 }
             } catch (Exception ex) {
@@ -738,10 +744,18 @@ public class FrameTextureView extends TextureView {
         Bitmap bitmap = null;
         if (mUseCache) {
             try {
+                // 获取【解码锁】，避免在解码图片时已经处于destroy状态，导致mDecodeOptions中inBitmap被回收了而崩溃
+                mDecodingLock.lockInterruptibly();
                 bitmap = BlobCacheUtil.getCacheBitmapByName(mBlobCache, name, mDecodeOptions.inBitmap);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 Log.e(TAG, "decodeBitmap, from cache, ex=" + ex + ", name=" + name);
+            } finally {
+                try {
+                    mDecodingLock.unlock();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
 
             if (bitmap != null) {
@@ -749,9 +763,10 @@ public class FrameTextureView extends TextureView {
             }
         }
 
-        // 获取【解码锁】，避免在解码图片时已经处于destroy状态，导致mDecodeOptions中inBitmap被回收了而崩溃
-        mDecodingLock.lock();
+
         try {
+            // 获取【解码锁】，避免在解码图片时已经处于destroy状态，导致mDecodeOptions中inBitmap被回收了而崩溃
+            mDecodingLock.lockInterruptibly();
             if (!isDestroy()) {
                 bitmap = ResourceUtil.getBitmap(name, mDecodeOptions);
                 if (mUseCache) {
@@ -762,7 +777,11 @@ public class FrameTextureView extends TextureView {
             ex.printStackTrace();
             Log.e(TAG, "decodeBitmap, ex: " + ex + ", name=" + name);
         } finally {
-            mDecodingLock.unlock();
+            try {
+                mDecodingLock.unlock();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
         return bitmap;
     }
