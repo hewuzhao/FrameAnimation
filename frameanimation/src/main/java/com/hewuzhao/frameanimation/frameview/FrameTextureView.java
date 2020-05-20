@@ -26,12 +26,15 @@ import com.hewuzhao.frameanimation.R;
 import com.hewuzhao.frameanimation.blobcache.BlobCache;
 import com.hewuzhao.frameanimation.blobcache.BlobCacheManager;
 import com.hewuzhao.frameanimation.blobcache.BlobCacheUtil;
+import com.hewuzhao.frameanimation.bytespool.BytesBuffer;
 import com.hewuzhao.frameanimation.utils.CommonUtil;
 import com.hewuzhao.frameanimation.utils.FrameParseUtil;
 import com.hewuzhao.frameanimation.utils.MatrixUtil;
 import com.hewuzhao.frameanimation.utils.ResourceUtil;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,10 +59,6 @@ public class FrameTextureView extends TextureView {
      * 默认的一帧时间间隔
      */
     private static final int DEFAULT_DURATION = 80;
-
-    private boolean mUseCache;
-    private FrameList mFrameList;
-    private BlobCache mBlobCache;
 
     /**
      * 正在绘制的索引
@@ -148,6 +147,40 @@ public class FrameTextureView extends TextureView {
      * 当前在绘制的帧动画资源id
      */
     private int mCurrentResId = -1;
+
+    /**
+     * 是否使用缓存方式
+     */
+    private boolean mUseCache;
+    /**
+     * 真动画列表数据集
+     */
+    private FrameList mFrameList;
+
+    /**
+     * Google的BlobCache缓存
+     */
+    private BlobCache mBlobCache;
+
+    /**
+     * 使用缓存时，读取bitmap的buffer数据
+     */
+    private BytesBuffer mDataBuffer;
+
+    /**
+     * 使用缓存时，读取bitmap时获取bitmap宽度的数据
+     */
+    private BytesBuffer mWidthBuffer;
+
+    /**
+     * 使用缓存时，读取bitmap时获取bitmap高度的数据
+     */
+    private BytesBuffer mHeightBuffer;
+
+    /**
+     * 使用缓存时，读取bitmap时name转换的key
+     */
+    private Map<String, byte[]> mKeyMap;
 
     public FrameTextureView(Context context) {
         super(context);
@@ -308,7 +341,7 @@ public class FrameTextureView extends TextureView {
      * @param resId 资源id
      */
     public void startWithFrameSrc(@DrawableRes int resId) {
-        Log.e(TAG, "startWithFrameSrc, resId=" + resId
+        Log.i(TAG, "startWithFrameSrc, resId=" + resId
                 + ", mCurrentResId=" + mCurrentResId + ", status=" + mStatus);
         if (isDestroy()) {
             return;
@@ -326,6 +359,7 @@ public class FrameTextureView extends TextureView {
         setStatus(FrameViewStatus.IDLE);
         // 释放之前的资源
         destroyBitmapQueue();
+        clearKeyMap();
 
         // 解码新的资源列表数据
         startDecodeThread(new Runnable() {
@@ -378,7 +412,7 @@ public class FrameTextureView extends TextureView {
                     return;
                 }
 
-                Log.e(TAG, "startWithFrameSrc, start draw, resId=" + mCurrentResId);
+                Log.i(TAG, "startWithFrameSrc, start draw, resId=" + mCurrentResId);
                 if (mDecodeHandler == null) {
                     Log.e(TAG, "startWithFrameSrc, decode handler is null, may be is destroy.");
                     return;
@@ -543,12 +577,14 @@ public class FrameTextureView extends TextureView {
         if (isDestroy()) {
             return;
         }
-        Log.e(TAG, "destroy FrameTextureView, start.");
+        Log.i(TAG, "destroy FrameTextureView, start.");
         setStatus(FrameViewStatus.DESTROY);
         destroyHandler();
         destroyBitmapQueue();
         destroyThread();
-        Log.e(TAG, "destroy FrameTextureView, end.");
+        destroyBytesBuffer();
+        clearKeyMap();
+        Log.i(TAG, "destroy FrameTextureView, end.");
     }
 
     private void destroyHandler() {
@@ -580,6 +616,27 @@ public class FrameTextureView extends TextureView {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    private void destroyBytesBuffer() {
+        if (mDataBuffer != null) {
+            mDataBuffer.data = null;
+            mDataBuffer = null;
+        }
+        if (mWidthBuffer != null) {
+            mWidthBuffer.data = null;
+            mWidthBuffer = null;
+        }
+        if (mHeightBuffer != null) {
+            mHeightBuffer.data = null;
+            mHeightBuffer = null;
+        }
+    }
+
+    private void clearKeyMap() {
+        if (mKeyMap != null) {
+            mKeyMap.clear();
         }
     }
 
@@ -628,11 +685,9 @@ public class FrameTextureView extends TextureView {
                         ex.printStackTrace();
                     } finally {
                         try {
-
+                            mDrawingLock.unlock();
                         } catch (Exception ex) {
                             ex.printStackTrace();
-                        } finally {
-                            mDrawingLock.unlock();
                         }
                     }
                 }
@@ -743,10 +798,28 @@ public class FrameTextureView extends TextureView {
         final String name = frameItem.getDrawableName();
         Bitmap bitmap = null;
         if (mUseCache) {
+            if (mDataBuffer == null) {
+                mDataBuffer = new BytesBuffer();
+            }
+            if (mWidthBuffer == null) {
+                mWidthBuffer = new BytesBuffer(4);
+            }
+            if (mHeightBuffer == null) {
+                mHeightBuffer = new BytesBuffer(4);
+            }
+            if (mKeyMap == null) {
+                mKeyMap = new ConcurrentHashMap<>();
+            }
+            byte[] key = mKeyMap.get(name);
+            if (key == null) {
+                key = BlobCacheUtil.getBytes(name);
+                mKeyMap.put(name, key);
+            }
             try {
                 // 获取【解码锁】，避免在解码图片时已经处于destroy状态，导致mDecodeOptions中inBitmap被回收了而崩溃
                 mDecodingLock.lockInterruptibly();
-                bitmap = BlobCacheUtil.getCacheBitmapByName(mBlobCache, name, mDecodeOptions.inBitmap);
+                bitmap = BlobCacheUtil.getCacheBitmapByName(mBlobCache, name, mDecodeOptions.inBitmap,
+                        mDataBuffer, mWidthBuffer, mHeightBuffer, key);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 Log.e(TAG, "decodeBitmap, from cache, ex=" + ex + ", name=" + name);
@@ -835,7 +908,7 @@ public class FrameTextureView extends TextureView {
         @Override
         public void run() {
             if (isDestroy()) {
-                Log.e(TAG, "DecodeRunnable, is not start, status=" + mStatus);
+                Log.e(TAG, "DecodeRunnable, is destroy.");
                 return;
             }
             if (mFrameList == null) {
@@ -857,6 +930,7 @@ public class FrameTextureView extends TextureView {
 
             LinkedBitmap linkedBitmap = getDrawnBitmap();
             if (isDestroy()) {
+                Log.e(TAG, "DecodeRunnable, is destroy.");
                 return;
             }
             if (linkedBitmap == null) {
@@ -865,6 +939,7 @@ public class FrameTextureView extends TextureView {
             mDecodeOptions.inBitmap = linkedBitmap.bitmap;
             Bitmap bitmap = decodeBitmap(frameItem);
             if (isDestroy()) {
+                Log.e(TAG, "DecodeRunnable, is destroy.");
                 return;
             }
             if (bitmap == null) {

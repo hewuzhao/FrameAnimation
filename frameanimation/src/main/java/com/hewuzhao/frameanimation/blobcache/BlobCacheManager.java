@@ -7,7 +7,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.hewuzhao.frameanimation.FrameApplication;
-import com.hewuzhao.frameanimation.bytespool.BytesBufferPool;
 
 import java.io.File;
 import java.util.Map;
@@ -28,14 +27,8 @@ public class BlobCacheManager {
     private Map<String, BlobCache> mBlobCacheMap;
     private boolean mOldCheckDoneMap = false;
 
-    private BytesBufferPool mDataBufferPool;
-    private BytesBufferPool mWidthAndHeightBufferPool;
-
     private BlobCacheManager() {
         mBlobCacheMap = new ConcurrentHashMap<>();
-
-        mDataBufferPool = new BytesBufferPool(4, 5 * 1024 * 1024);
-        mWidthAndHeightBufferPool = new BytesBufferPool(4, 4);
     }
 
     private static class SingletonHolder {
@@ -44,19 +37,6 @@ public class BlobCacheManager {
 
     public static BlobCacheManager getInstance() {
         return SingletonHolder.INSTANCE;
-    }
-
-    public BlobCache getBlobCache(String fileName) {
-        if (TextUtils.isEmpty(fileName)) {
-            return null;
-        }
-        SharedPreferences sp = FrameApplication.sApplication.getSharedPreferences(NAME_BLOBCACHE_SP,
-                Context.MODE_PRIVATE);
-        int version = sp.getInt(fileName, 1);
-        return getBlobCache(fileName,
-                BlobCacheParams.DEFAULT_BLOB_CACHE_MAX_ENTRIES,
-                BlobCacheParams.DEFAULT_BLOB_CACHE_MAX_BYTES,
-                version);
     }
 
     /**
@@ -165,19 +145,5 @@ public class BlobCacheManager {
         } else if (file.exists()) {
             file.delete();
         }
-    }
-
-    public BytesBufferPool getBufferPool() {
-        return mDataBufferPool;
-    }
-
-    public BytesBufferPool getWidthAndHeightBufferPool() {
-        return mWidthAndHeightBufferPool;
-    }
-
-    public static void startCheckBlobCache() {
-        Intent intent = new Intent(FrameApplication.sApplication, BlobCacheService.class);
-        intent.putExtra(BlobCacheParams.FLAG_IMAGE_CACHE_INIT, BlobCacheParams.FLAG_IMAGE_CACHE_INIT_VALUE);
-        FrameApplication.sApplication.startService(intent);
     }
 }

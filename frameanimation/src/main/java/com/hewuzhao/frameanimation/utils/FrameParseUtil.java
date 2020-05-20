@@ -14,6 +14,7 @@ import android.util.Xml;
 import androidx.annotation.DrawableRes;
 
 import com.hewuzhao.frameanimation.FrameApplication;
+import com.hewuzhao.frameanimation.R;
 import com.hewuzhao.frameanimation.frameview.FrameItem;
 import com.hewuzhao.frameanimation.frameview.FrameList;
 
@@ -88,6 +89,15 @@ public class FrameParseUtil {
                             boolean oneShot = typedArray.getBoolean(
                                     (Integer) sFieldAnimationDrawableOneshot.get(null), false);
                             typedArray.recycle();
+
+                            TypedArray app = res.obtainAttributes(attrs, R.styleable.BlobCache);
+                            int version = app.getInt(R.styleable.BlobCache_version, 1);
+                            int maxEntries = app.getInt(R.styleable.BlobCache_maxEntries, 100);
+                            int maxBytes = app.getInt(R.styleable.BlobCache_maxBytes, 100 * 1024 * 1024);
+                            app.recycle();
+                            frameList.setVersion(version);
+                            frameList.setMaxBytes(maxBytes);
+                            frameList.setMaxEntries(maxEntries);
 
                             frameList.setOneShot(oneShot);
                         } else if ("item".equals(name)) {

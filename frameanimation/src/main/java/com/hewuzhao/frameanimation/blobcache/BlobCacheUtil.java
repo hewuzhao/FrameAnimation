@@ -4,7 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
-import com.hewuzhao.frameanimation.bytespool.BytesBufferPool;
+import com.hewuzhao.frameanimation.bytespool.BytesBuffer;
 import com.hewuzhao.frameanimation.utils.ResourceUtil;
 
 import java.nio.ByteBuffer;
@@ -42,7 +42,7 @@ public class BlobCacheUtil {
         return crc;
     }
 
-    private static byte[] getBytes(String in) {
+    public static byte[] getBytes(String in) {
         byte[] result = new byte[in.length() * 2];
         int output = 0;
         for (char ch : in.toCharArray()) {
@@ -52,13 +52,19 @@ public class BlobCacheUtil {
         return result;
     }
 
-    public static Bitmap getCacheBitmapByName(BlobCache blobCache, String name, Bitmap inBitmap) {
+    public static Bitmap getCacheBitmapByName(BlobCache blobCache, String name, Bitmap inBitmap,
+                                              BytesBuffer bytesBuffer, BytesBuffer widthBuffer,
+                                              BytesBuffer heightBuffer, byte[] key) {
 
-        BytesBufferPool.BytesBuffer bytesBuffer = BlobCacheManager.getInstance().getBufferPool().get();
+        if (bytesBuffer == null) {
+            bytesBuffer = new BytesBuffer();
+        }
         try {
 
             BlobCache.LookupRequest request = new BlobCache.LookupRequest();
-            byte[] key = getBytes(name);
+            if (key == null) {
+                key = getBytes(name);
+            }
             request.key = crc64Long(key);
             request.buffer = bytesBuffer.data;
 
@@ -68,16 +74,24 @@ public class BlobCacheUtil {
                     bytesBuffer.offset = key.length + 8;
                     bytesBuffer.length = request.length - bytesBuffer.offset;
 
-                    BytesBufferPool.BytesBuffer widthBuffer = BlobCacheManager.getInstance().getWidthAndHeightBufferPool().get();
+                    if (widthBuffer == null) {
+                        widthBuffer = new BytesBuffer(4);
+                    }
                     byte[] wb = widthBuffer.data;
                     System.arraycopy(bytesBuffer.data, bytesBuffer.length, wb, 0, 4);
-                    BytesBufferPool.BytesBuffer heightBuffer = BlobCacheManager.getInstance().getWidthAndHeightBufferPool().get();
+                    if (heightBuffer == null) {
+                        heightBuffer = new BytesBuffer(4);
+                    }
                     byte[] hb = heightBuffer.data;
                     System.arraycopy(bytesBuffer.data, bytesBuffer.length + 4, hb, 0, 4);
                     int width = ResourceUtil.byte2int(wb);
                     int height = ResourceUtil.byte2int(hb);
-                    BlobCacheManager.getInstance().getWidthAndHeightBufferPool().recycle(widthBuffer);
-                    BlobCacheManager.getInstance().getWidthAndHeightBufferPool().recycle(heightBuffer);
+
+                    widthBuffer.length = 0;
+                    widthBuffer.offset = 0;
+
+                    heightBuffer.length = 0;
+                    heightBuffer.offset = 0;
 
                     Bitmap bitmap = null;
                     if (inBitmap != null && !inBitmap.isRecycled() && inBitmap.getWidth() == width && inBitmap.getHeight() == height) {
@@ -107,14 +121,11 @@ public class BlobCacheUtil {
             ex.printStackTrace();
             Log.e(TAG, "decode bitmap from blobcache error, name: " + name + ", ex: " + ex);
         } finally {
-            BlobCacheManager.getInstance().getBufferPool().recycle(bytesBuffer);
+            bytesBuffer.length = 0;
+            bytesBuffer.offset = 0;
         }
 
         return null;
-    }
-
-    public static void saveImageByBlobCache(String drawableName, BlobCache blobCache) {
-        saveImageByBlobCache(null, drawableName, blobCache);
     }
 
     public static void saveImageByBlobCache(Bitmap bitmap, String drawableName, BlobCache blobCache) {
@@ -164,28 +175,6 @@ public class BlobCacheUtil {
 
         byte[] key = BlobCacheUtil.getBytes(path);
         return BlobCacheUtil.crc64Long(key);
-    }
-
-    public static boolean checkCacheByName(String name, BlobCache blobCache) {
-        if (name == null || name.isEmpty()) {
-            Log.e(TAG, "check cache by name, name is null.");
-            return false;
-        }
-        try {
-            byte[] key = BlobCacheUtil.getBytes(name);
-            long cacheKey = BlobCacheUtil.crc64Long(key);
-            byte[] data = blobCache.lookup(cacheKey);
-            if (data == null) {
-                Log.e(TAG, "check cache by name,  name: " + name + ", data is null.");
-                return false;
-            }
-            Log.e(TAG, "check cache by name,  name: " + name + ", data is exit.");
-            return true;
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            Log.e(TAG, "check cache by name error, name: " + name + ", ex: " + ex);
-        }
-        return false;
     }
 
     private static boolean isSameKey(byte[] key, byte[] buffer, int bufferLen) {
