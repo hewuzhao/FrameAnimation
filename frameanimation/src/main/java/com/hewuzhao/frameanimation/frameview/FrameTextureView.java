@@ -32,6 +32,7 @@ import com.hewuzhao.frameanimation.utils.FrameParseUtil;
 import com.hewuzhao.frameanimation.utils.MatrixUtil;
 import com.hewuzhao.frameanimation.utils.ResourceUtil;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -181,6 +182,16 @@ public class FrameTextureView extends TextureView {
      * 使用缓存时，读取bitmap时name转换的key
      */
     private Map<String, byte[]> mKeyMap;
+
+    /**
+     * 使用缓存时，用于copy数据到bitmap的buffer
+     */
+    private ByteBuffer mPixelsBuffer;
+
+    /**
+     * 使用缓存时，用于查询缓存的请求；
+     */
+    private BlobCache.LookupRequest mLookupRequest;
 
     public FrameTextureView(Context context) {
         super(context);
@@ -360,6 +371,7 @@ public class FrameTextureView extends TextureView {
         // 释放之前的资源
         destroyBitmapQueue();
         clearKeyMap();
+        clearPixelsBuffer();
 
         // 解码新的资源列表数据
         startDecodeThread(new Runnable() {
@@ -583,7 +595,9 @@ public class FrameTextureView extends TextureView {
         destroyBitmapQueue();
         destroyThread();
         destroyBytesBuffer();
+        destroyLookupRequest();
         clearKeyMap();
+        clearPixelsBuffer();
         Log.i(TAG, "destroy FrameTextureView, end.");
     }
 
@@ -638,6 +652,17 @@ public class FrameTextureView extends TextureView {
         if (mKeyMap != null) {
             mKeyMap.clear();
         }
+    }
+
+    private void clearPixelsBuffer() {
+        if (mPixelsBuffer != null) {
+            mPixelsBuffer.clear();
+            mPixelsBuffer = null;
+        }
+    }
+
+    private void destroyLookupRequest() {
+        mLookupRequest = null;
     }
 
     public void setScaleType(@FrameScaleType int scaleType) {
@@ -815,11 +840,23 @@ public class FrameTextureView extends TextureView {
                 key = BlobCacheUtil.getBytes(name);
                 mKeyMap.put(name, key);
             }
+
+            if (mLookupRequest == null) {
+                mLookupRequest = new BlobCache.LookupRequest();
+            }
             try {
                 // 获取【解码锁】，避免在解码图片时已经处于destroy状态，导致mDecodeOptions中inBitmap被回收了而崩溃
                 mDecodingLock.lockInterruptibly();
-                bitmap = BlobCacheUtil.getCacheBitmapByName(mBlobCache, name, mDecodeOptions.inBitmap,
-                        mDataBuffer, mWidthBuffer, mHeightBuffer, key);
+                if (!isDestroy()) {
+                    BytesBuffer bytesBuffer = BlobCacheUtil.getCacheDataByName(mBlobCache, name, mDataBuffer, key, mLookupRequest);
+                    if (bytesBuffer != null && bytesBuffer.data != null) {
+                        mDataBuffer = bytesBuffer;
+                        if (mPixelsBuffer == null || mPixelsBuffer.capacity() != bytesBuffer.data.length) {
+                            mPixelsBuffer = ByteBuffer.allocate(bytesBuffer.data.length);
+                        }
+                        bitmap = BlobCacheUtil.getCacheBitmapByData(bytesBuffer, mPixelsBuffer, mDecodeOptions.inBitmap, mWidthBuffer, mHeightBuffer);
+                    }
+                }
             } catch (Exception ex) {
                 ex.printStackTrace();
                 Log.e(TAG, "decodeBitmap, from cache, ex=" + ex + ", name=" + name);
@@ -835,7 +872,6 @@ public class FrameTextureView extends TextureView {
                 return bitmap;
             }
         }
-
 
         try {
             // 获取【解码锁】，避免在解码图片时已经处于destroy状态，导致mDecodeOptions中inBitmap被回收了而崩溃
