@@ -8,7 +8,7 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/frame_view_part"
-        android:layout_width="240dp"
+        android:layout_width="180dp"
         android:layout_height="0dp"
         android:background="@android:color/darker_gray"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -28,7 +28,7 @@
 
         <androidx.appcompat.widget.AppCompatSpinner
             android:id="@+id/scale_type"
-            android:layout_width="200dp"
+            android:layout_width="160dp"
             android:layout_height="wrap_content"
             app:layout_constraintBottom_toTopOf="@id/small_frame_texture_view"
             app:layout_constraintEnd_toEndOf="parent"
@@ -37,7 +37,7 @@
 
         <Button
             android:id="@+id/small_frame_texture_view"
-            android:layout_width="200dp"
+            android:layout_width="160dp"
             android:layout_height="50dp"
             android:layout_marginTop="5dp"
             android:text="逐帧动画 小图（&lt;1M）"
@@ -48,7 +48,7 @@
 
         <Button
             android:id="@+id/big_frame_texture_view"
-            android:layout_width="200dp"
+            android:layout_width="160dp"
             android:layout_height="50dp"
             android:text="逐帧动画 大图（&gt;=1M）"
             app:layout_constraintBottom_toTopOf="@id/bt_stop"
@@ -58,7 +58,7 @@
 
         <Button
             android:id="@+id/bt_stop"
-            android:layout_width="200dp"
+            android:layout_width="160dp"
             android:layout_height="50dp"
             android:text="停止"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -72,12 +72,11 @@
         android:id="@+id/frame_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:useCache="true"
-        app:src="@drawable/big_animation_drawable"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/frame_view_part"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
+        app:layout_constraintTop_toTopOf="parent"
+        app:src="@drawable/big_animation_drawable"
+        app:useCache="true" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

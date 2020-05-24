@@ -114,15 +114,18 @@ public class BlobCacheUtil {
             heightBuffer.offset = 0;
 
             Bitmap bitmap = null;
-            if (inBitmap != null
-                    && !inBitmap.isRecycled()
-                    && inBitmap.getWidth() == width
-                    && inBitmap.getHeight() == height) {
+            if (inBitmap == null) {
+                Log.e(TAG, "getCacheBitmapByData, inBitmap is null");
+            } else if (inBitmap.isRecycled()) {
+                Log.e(TAG, "getCacheBitmapByData, inBitmap is recycled.");
+            } else if (inBitmap.getWidth() != width) {
+                Log.e(TAG, "getCacheBitmapByData, inBitmap width is not fit.");
+            } else if (inBitmap.getHeight() != height) {
+                Log.e(TAG, "getCacheBitmapByData, inBitmap height is not fit.");
+            } else {
                 bitmap = inBitmap;
             }
             if (bitmap == null) {
-                Log.e(TAG, "getCacheBitmapByData, inBitmap is null or width and height not fit, width=" + width + ", height=" + height);
-
                 bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
                 if (bitmap == null) {
                     Log.e(TAG, "getCacheBitmapByData, Bitmap.createBitmap bitmap is null, may be something error.");
@@ -149,6 +152,10 @@ public class BlobCacheUtil {
         return null;
     }
 
+    /**
+     * 该方法拆分为 getCacheDataByName 和 getCacheBitmapByData
+     */
+    @Deprecated
     public static Bitmap getCacheBitmapByName(BlobCache blobCache, String name, Bitmap inBitmap,
                                               BytesBuffer bytesBuffer, BytesBuffer widthBuffer,
                                               BytesBuffer heightBuffer, byte[] key) {
@@ -255,7 +262,6 @@ public class BlobCacheUtil {
             buffer.put(key);
 
             blobCache.insert(BlobCacheUtil.getCacheKey(drawableName), buffer.array());
-            Log.e(TAG, "save image to blob cache success, name: " + drawableName);
         } catch (Exception ex) {
             ex.printStackTrace();
             Log.e(TAG, "save imge by blob cache error, name: " + drawableName + ", ex: " + ex);
