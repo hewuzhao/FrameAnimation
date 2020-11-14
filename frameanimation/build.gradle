@@ -31,3 +31,32 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
 }
+
+//afterEvaluate {
+//    generateReleaseBuildConfig.enabled = false
+//    generateDebugBuildConfig.enabled = false
+//}
+
+// ------------------------------------------bintray 配置-------------------------------------------
+//apply plugin: 'com.novoda.bintray-release'
+//
+//buildscript {
+//    repositories {
+//        jcenter()
+//    }
+//    dependencies {
+//        classpath 'com.novoda:bintray-release:0.9.2'
+//    }
+//}
+//
+//// 'groupId:artifactId:publishVersion'
+//// 'com.hewuzhao.frameanimation:frameanimation:1.0.0'
+//publish {
+//    userOrg = 'hewuzhao'
+//    groupId = 'com.hewuzhao.frameanimation'
+//    artifactId = 'frameanimation'
+//    publishVersion = '1.0.0'
+//    desc = 'Efficient and fluent frame animation.'
+//    website = 'https://github.com/hewuzhao/FrameAnimation'
+//}
+// ------------------------------------------bintray 配置-------------------------------------------
