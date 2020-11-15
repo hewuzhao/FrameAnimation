@@ -8,7 +8,10 @@ BlobCache算法可以查看：
 2. [BlobCache与DiskLruCache的读写对比](https://blog.csdn.net/hewuzhao/article/details/108696808)
 
 ## 示例
-![image](https://github.com/hewuzhao/FrameAnimation/image/gif-demo.gif）
+![img](https://github.com/hewuzhao/FrameAnimation/image/gif-demo.gif ）
+
+
+<img src="https://github.com/hewuzhao/FrameAnimation/image/gif-demo.gif" width="500" height="309"/><br/>
 
 ## 添加配置
 ```
