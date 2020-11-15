@@ -7,6 +7,9 @@ BlobCache算法可以查看：
 1. [BlobCache算法详解](https://blog.csdn.net/hewuzhao/article/details/108028320)
 2. [BlobCache与DiskLruCache的读写对比](https://blog.csdn.net/hewuzhao/article/details/108696808)
 
+## 示例
+![image](https://github.com/hewuzhao/FrameAnimation/image/gif-demo.gif）
+
 ## 添加配置
 ```
 dependencies {
