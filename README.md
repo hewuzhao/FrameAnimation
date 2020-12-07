@@ -3,6 +3,8 @@
 FrameAnimation是一个简洁流畅的高性能帧动画控件。
 结合使用了TextureView和BlobCache，逐帧解析与绘制，避免了多帧的情况下使用Android原生AnimationDrawable带来的OOM和卡顿问题。
 
+详细介绍文章：[OOM？高性能帧动画FrameAnimation-TextureView和BlobCache](https://blog.csdn.net/hewuzhao/article/details/109920572)
+
 BlobCache算法可以查看：
 1. [BlobCache算法详解](https://blog.csdn.net/hewuzhao/article/details/108028320)
 2. [BlobCache与DiskLruCache的读写对比](https://blog.csdn.net/hewuzhao/article/details/108696808)
