@@ -94,6 +94,8 @@ lint/tmp/
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+.idea/gradle.xml
+.idea/misc.xml
 .DS_Store
 /build
 /captures

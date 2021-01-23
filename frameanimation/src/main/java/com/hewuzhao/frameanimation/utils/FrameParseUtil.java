@@ -3,25 +3,20 @@ package com.hewuzhao.frameanimation.utils;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
-import android.content.res.TypedArray;
 import android.content.res.XmlResourceParser;
 import android.text.TextUtils;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.util.TypedValue;
-import android.util.Xml;
 
 import androidx.annotation.DrawableRes;
 
 import com.hewuzhao.frameanimation.FrameApplication;
-import com.hewuzhao.frameanimation.R;
 import com.hewuzhao.frameanimation.frameview.FrameItem;
 import com.hewuzhao.frameanimation.frameview.FrameList;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,13 +26,6 @@ import java.util.List;
  */
 public class FrameParseUtil {
     private static final String TAG = "FrameParseUtil";
-
-    private static Class sStyleableClass;
-    private static Field sFieldAnimationDrawable;
-    private static Field sFieldAnimationDrawableOneshot;
-    private static Field sFieldAnimationDrawableItem;
-    private static Field sFieldAnimationDrawableItemDuration;
-    private static Field sFieldAnimationDrawableItemDrawable;
 
     /**
      * 帧动画文件解析
@@ -60,7 +48,6 @@ public class FrameParseUtil {
         try {
             AssetManager assetManager = context.getAssets();
             XmlResourceParser parser = assetManager.openXmlResourceParser(0, file);
-            AttributeSet attrs = Xml.asAttributeSet(parser);
             int event = parser.getEventType();
             while (event != XmlPullParser.END_DOCUMENT) {
                 switch (event) {
@@ -71,72 +58,64 @@ public class FrameParseUtil {
                     case XmlPullParser.START_TAG: {
                         String name = parser.getName();
                         if ("animation-list".equals(name)) {
-                            if (sStyleableClass == null) {
-                                sStyleableClass = Class.forName("com.android.internal.R$styleable");
+                            int count = parser.getAttributeCount();
+                            for (int i = 0; i < count; i++) {
+                                String attributeName = parser.getAttributeName(i);
+                                if (attributeName != null) {
+                                    switch (attributeName) {
+                                        case "oneshot": {
+                                            boolean oneShot = parser.getAttributeBooleanValue(i, false);
+                                            frameList.setOneShot(oneShot);
+                                            break;
+                                        }
+                                        case "maxBytes": {
+                                            // default 500M
+                                            int maxBytes = parser.getAttributeIntValue(i, 524288000);
+                                            frameList.setMaxBytes(maxBytes);
+                                            break;
+                                        }
+                                        case "maxEntries": {
+                                            int maxEntries = parser.getAttributeIntValue(i, 100);
+                                            frameList.setMaxEntries(maxEntries);
+                                            break;
+                                        }
+                                        case "version": {
+                                            int version = parser.getAttributeIntValue(i, 1);
+                                            frameList.setVersion(version);
+                                            break;
+                                        }
+                                    }
+                                }
                             }
-                            if (sFieldAnimationDrawable == null) {
-                                sFieldAnimationDrawable = sStyleableClass.getDeclaredField("AnimationDrawable");
-                            }
-
-                            sFieldAnimationDrawable.setAccessible(true);
-                            TypedArray typedArray = res.obtainAttributes(attrs,
-                                    (int[]) sFieldAnimationDrawable.get(null));
-                            if (sFieldAnimationDrawableOneshot == null) {
-                                sFieldAnimationDrawableOneshot =
-                                        sStyleableClass.getDeclaredField("AnimationDrawable_oneshot");
-                            }
-                            sFieldAnimationDrawableOneshot.setAccessible(true);
-                            boolean oneShot = typedArray.getBoolean(
-                                    (Integer) sFieldAnimationDrawableOneshot.get(null), false);
-                            typedArray.recycle();
-
-                            TypedArray app = res.obtainAttributes(attrs, R.styleable.BlobCache);
-                            int version = app.getInt(R.styleable.BlobCache_version, 1);
-                            int maxEntries = app.getInt(R.styleable.BlobCache_maxEntries, 100);
-                            int maxBytes = app.getInt(R.styleable.BlobCache_maxBytes, 100 * 1024 * 1024);
-                            app.recycle();
-                            frameList.setVersion(version);
-                            frameList.setMaxBytes(maxBytes);
-                            frameList.setMaxEntries(maxEntries);
-
-                            frameList.setOneShot(oneShot);
                         } else if ("item".equals(name)) {
-                            if (sStyleableClass == null) {
-                                sStyleableClass = Class.forName("com.android.internal.R$styleable");
-                            }
-                            if (sFieldAnimationDrawableItem == null) {
-                                sFieldAnimationDrawableItem =
-                                        sStyleableClass.getDeclaredField("AnimationDrawableItem");
-                            }
-                            sFieldAnimationDrawableItem.setAccessible(true);
-                            TypedArray itemArray = res.obtainAttributes(attrs,
-                                    (int[]) sFieldAnimationDrawableItem.get(null));
-                            if (sFieldAnimationDrawableItemDuration == null) {
-                                sFieldAnimationDrawableItemDuration =
-                                        sStyleableClass.getDeclaredField("AnimationDrawableItem_duration");
-                            }
-                            sFieldAnimationDrawableItemDuration.setAccessible(true);
-                            int duration = itemArray.getInt(
-                                    (Integer) sFieldAnimationDrawableItemDuration.get(null), 100);
-
-                            if (sFieldAnimationDrawableItemDrawable == null) {
-                                sFieldAnimationDrawableItemDrawable =
-                                        sStyleableClass.getDeclaredField("AnimationDrawableItem_drawable");
-                            }
-                            sFieldAnimationDrawableItemDrawable.setAccessible(true);
-                            String drawable =
-                                    itemArray.getString((Integer) sFieldAnimationDrawableItemDrawable.get(null));
-                            itemArray.recycle();
-                            if (TextUtils.isEmpty(drawable)) {
-                                throw new XmlPullParserException("the drawable is empty, need a drawable.");
-                            }
-                            String[] dr = drawable.split("/");
-                            drawable = dr[dr.length - 1];
-                            drawable = drawable.split("\\.")[0];
-
                             FrameItem frameItem = new FrameItem();
-                            frameItem.setDuration(duration);
-                            frameItem.setDrawableName(drawable);
+                            int count = parser.getAttributeCount();
+                            for (int i = 0; i < count; i++) {
+                                String attributeName = parser.getAttributeName(i);
+
+                                if (attributeName != null) {
+                                    switch (attributeName) {
+                                        case "drawable": {
+                                            // @2131099732
+                                            String drawable = parser.getAttributeValue(i);
+                                            if (TextUtils.isEmpty(drawable)) {
+                                                throw new XmlPullParserException("the drawable is empty, need a drawable.");
+                                            }
+                                            drawable = drawable.replace("@", "");
+                                            String path = res.getResourceName(Integer.parseInt(drawable));
+                                            String[] dr = path.split("/");
+                                            drawable = dr[dr.length - 1];
+                                            frameItem.setDrawableName(drawable);
+                                            break;
+                                        }
+                                        case "duration": {
+                                            int duration = parser.getAttributeIntValue(i, 60);
+                                            frameItem.setDuration(duration);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
                             itemList.add(frameItem);
                         }
                         break;
