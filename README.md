@@ -17,7 +17,7 @@ BlobCache算法可以查看：
 ```
 dependencies {
     ...
-    implementation 'com.hewuzhao.frameanimation:frameanimation:1.0.0'
+    implementation 'com.hewuzhao.frameanimation:frameanimation:1.0.1'
     ...
 }
 ```

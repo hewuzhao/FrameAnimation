@@ -55,7 +55,7 @@ dependencies {
 //    userOrg = 'hewuzhao'
 //    groupId = 'com.hewuzhao.frameanimation'
 //    artifactId = 'frameanimation'
-//    publishVersion = '1.0.0'
+//    publishVersion = '1.0.1'
 //    desc = 'Efficient and fluent frame animation.'
 //    website = 'https://github.com/hewuzhao/FrameAnimation'
 //}
